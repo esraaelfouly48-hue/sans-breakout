@@ -9,7 +9,7 @@ const mobileControls = document.getElementById('mobileControls');
 const bossDialogue = document.getElementById('bossDialogue');
 const dialogueText = document.getElementById('dialogueText');
 
-// Music Fix: Pre-loading and forcing play on interaction
+// Setup Audio Objects
 const menuMusic = new Audio('menu.ogg');
 const battleMusic = new Audio('battle.ogg');
 const loseSound = new Audio('lose.ogg');
@@ -25,13 +25,13 @@ const keys = { ArrowLeft: false, ArrowRight: false };
 window.addEventListener('keydown', (e) => { if(keys.hasOwnProperty(e.code)) keys[e.code] = true; });
 window.addEventListener('keyup', (e) => { if(keys.hasOwnProperty(e.code)) keys[e.code] = false; });
 
-// Mobile Button Listeners
-const setupBtn = (btn, key) => {
+const setupBtn = (btnId, key) => {
+    const btn = document.getElementById(btnId);
     btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
     btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
 };
-setupBtn(document.getElementById('btnLeft'), 'ArrowLeft');
-setupBtn(document.getElementById('btnRight'), 'ArrowRight');
+setupBtn('btnLeft', 'ArrowLeft');
+setupBtn('btnRight', 'ArrowRight');
 
 function initBricks() {
     bricks = [];
@@ -42,15 +42,23 @@ function initBricks() {
 }
 
 function startGame(mode) {
-    // Music Unlock: Playing and immediately pausing battle music allows it to play later!
-    battleMusic.play().then(() => { battleMusic.pause(); battleMusic.currentTime = 0; });
+    // --- THE MUSIC FIX ---
+    // We "play" everything for 1 millisecond then pause. 
+    // This unlocks them for the rest of the session.
+    [menuMusic, battleMusic, loseSound].forEach(track => {
+        track.play().then(() => track.pause()).catch(e => console.log("Audio unlock failed"));
+    });
+
+    menuMusic.currentTime = 0;
     menuMusic.play();
 
     startScreen.classList.add('hidden');
     if (mode === 'mobile') mobileControls.classList.remove('hidden');
     
+    // Reset Game
     score = 0; hp = 20; level = 1; gameMode = 'breakout';
     player.width = 80; player.color = 'white';
+    drops = []; bones = [];
     initBricks();
     updateHUD();
     isPlaying = true;
@@ -64,7 +72,8 @@ function updateHUD() {
 function startBossFight() {
     gameMode = 'boss';
     menuMusic.pause();
-    battleMusic.play(); // This works now because we "unlocked" it in startGame
+    battleMusic.currentTime = 0;
+    battleMusic.play();
     
     player.width = 20; player.height = 20; player.color = 'red';
     player.y = 450;
@@ -90,46 +99,57 @@ function update() {
     ctx.fillRect(player.x, player.y, player.width, player.height);
 
     if (gameMode === 'breakout') {
-        // Ball logic
+        // Ball Physics
         ball.x += ball.dx; ball.y += ball.dy;
         if (ball.x < 0 || ball.x > canvas.width) ball.dx *= -1;
         if (ball.y < 0) ball.dy *= -1;
-        if (ball.y > player.y && ball.x > player.x && ball.x < player.x + player.width) ball.dy *= -1;
-        if (ball.y > canvas.height) { hp -= 5; updateHUD(); ball.y = 400; ball.dy = -4; }
+        if (ball.y > player.y && ball.x > player.x && ball.x < player.x + player.width) {
+            ball.dy = -Math.abs(ball.dy); 
+        }
+        if (ball.y > canvas.height) { hp -= 2; updateHUD(); ball.y = 300; ball.dy = -4; }
 
         ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
         ctx.fillStyle = 'white'; ctx.fill(); ctx.closePath();
 
-        // Brick and Drop logic
+        // Bricks
         let count = 0;
-        bricks.forEach(col => col.forEach(b => {
-            if (b.status === 1) {
-                count++;
-                b.x = bricks.indexOf(col) * 75 + 25;
-                b.y = col.indexOf(b) * 35 + 50;
-                ctx.fillStyle = '#00aaff';
-                ctx.fillRect(b.x, b.y, 60, 20);
-                if (ball.x > b.x && ball.x < b.x+60 && ball.y > b.y && ball.y < b.y+20) {
-                    b.status = 0; ball.dy *= -1; score += 10;
-                    // DROPS: 20% chance to drop HP
-                    if (Math.random() < 0.2) drops.push({x: b.x + 30, y: b.y, speed: 3});
+        for(let c=0; c<5; c++) {
+            for(let r=0; r<3; r++) {
+                let b = bricks[c][r];
+                if(b.status === 1) {
+                    count++;
+                    b.x = c * 75 + 25; b.y = r * 35 + 50;
+                    ctx.fillStyle = '#00aaff';
+                    ctx.fillRect(b.x, b.y, 60, 20);
+                    if(ball.x > b.x && ball.x < b.x+60 && ball.y > b.y && ball.y < b.y+20) {
+                        b.status = 0; ball.dy *= -1; score += 10;
+                        // 40% Chance for a drop
+                        if(Math.random() < 0.4) drops.push({x: b.x + 25, y: b.y, w: 15, h: 15});
+                    }
                 }
             }
-        }));
+        }
 
-        // Handle Drops
-        drops.forEach((d, i) => {
-            d.y += d.speed;
-            ctx.fillStyle = '#00ff00'; // Green heart drop
-            ctx.fillRect(d.x, d.y, 10, 10);
-            if (d.y > player.y && d.x > player.x && d.x < player.x + player.width) {
-                hp = Math.min(20, hp + 2); updateHUD(); drops.splice(i, 1);
+        // Drops Logic
+        for(let i = drops.length - 1; i >= 0; i--) {
+            let d = drops[i];
+            d.y += 3;
+            ctx.fillStyle = '#00ff00'; // Green
+            ctx.fillRect(d.x, d.y, d.w, d.h);
+            
+            // Collision with paddle
+            if(d.y + d.h > player.y && d.x + d.w > player.x && d.x < player.x + player.width) {
+                hp = Math.min(20, hp + 2);
+                updateHUD();
+                drops.splice(i, 1);
+            } else if (d.y > canvas.height) {
+                drops.splice(i, 1);
             }
-        });
+        }
 
         if (count === 0) startBossFight();
     } else {
-        // BOSS LOGIC (Raining bones)
+        // Boss Mode
         if (frameCount % 20 === 0) bones.push({x: Math.random()*380, y: -20, speed: 5});
         bones.forEach((b, i) => {
             b.y += b.speed;
@@ -142,7 +162,14 @@ function update() {
         });
     }
 
-    if (hp <= 0) { isPlaying = false; alert("GAME OVER"); location.reload(); }
+    if (hp <= 0) {
+        isPlaying = false;
+        battleMusic.pause();
+        menuMusic.pause();
+        loseSound.play();
+        alert("GAME OVER");
+        location.reload();
+    }
     frameCount++;
     gameLoop = requestAnimationFrame(update);
 }

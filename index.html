@@ -2,42 +2,42 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-            <title>Sans Breakout</title>
-                <link rel="stylesheet" href="style.css">
-                </head>
-                <body>
-                    <div class="game-container">
-                            <div class="hud">
-                                        <span>SCORE: <b id="score">0</b></span>
-                                                    <span>LV: <b id="level">1</b></span>
-                                                                <span>HP: <b id="hp">20</b></span>
-                                                                        </div>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sans Breakout</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="hud">
+            <span>SCORE: <b id="score">0</b></span>
+            <span>LV: <b id="level">1</b></span>
+            <span>HP: <b id="hp">20</b></span>
+        </div>
 
-                                                                                <div id="game-area">
-                                                                                            <canvas id="gameCanvas" width="400" height="500"></canvas>
-                                                                                                        
-                                                                                                                    <div id="bossDialogue" class="overlay hidden">
-                                                                                                                                    <div class="dialogue-box">
-                                                                                                                                                        <span id="bossName">SANS:</span>
-                                                                                                                                                                            <p id="dialogueText"></p>
-                                                                                                                                                                                            </div>
-                                                                                                                                                                                                        </div>
+        <div id="game-area">
+            <canvas id="gameCanvas" width="400" height="500"></canvas>
+            
+            <div id="bossDialogue" class="overlay hidden">
+                <div class="dialogue-box">
+                    <span id="bossName">SANS:</span>
+                    <p id="dialogueText"></p>
+                </div>
+            </div>
 
-                                                                                                                                                                                                                    <div id="startScreen" class="overlay">
-                                                                                                                                                                                                                                    <h1 id="title">DETERMINATION</h1>
-                                                                                                                                                                                                                                                    <div class="menu-buttons">
-                                                                                                                                                                                                                                                                        <button onclick="startGame('pc')">PC (Keyboard)</button>
-                                                                                                                                                                                                                                                                                            <button onclick="startGame('mobile')">MOBILE (Touch)</button>
-                                                                                                                                                                                                                                                                                                            </div>
-                                                                                                                                                                                                                                                                                                                        </div>
-                                                                                                                                                                                                                                                                                                                                </div>
+            <div id="startScreen" class="overlay">
+                <h1 id="title">DETERMINATION</h1>
+                <div class="menu-buttons">
+                    <button onclick="startGame('pc')">PC (Keyboard)</button>
+                    <button onclick="startGame('mobile')">MOBILE (Touch)</button>
+                </div>
+            </div>
+        </div>
 
-                                                                                                                                                                                                                                                                                                                                        <div id="mobileControls" class="hidden">
-                                                                                                                                                                                                                                                                                                                                                    <button id="btnLeft" class="control-btn">&larr;</button>
-                                                                                                                                                                                                                                                                                                                                                                <button id="btnRight" class="control-btn">&rarr;</button>
-                                                                                                                                                                                                                                                                                                                                                                        </div>
-                                                                                                                                                                                                                                                                                                                                                                            </div>
-                                                                                                                                                                                                                                                                                                                                                                                <script src="script.js"></script>
-                                                                                                                                                                                                                                                                                                                                                                                </body>
-                                                                                                                                                                                                                                                                                                                                                                                </html>
+        <div id="mobileControls" class="hidden">
+            <button id="btnLeft" class="control-btn"><--</button>
+            <button id="btnRight" class="control-btn">--></button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
