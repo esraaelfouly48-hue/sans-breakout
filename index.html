@@ -13,7 +13,7 @@
             <span>LV: <b id="level">1</b></span>
             <span>HP: <b id="hp">20</b></span>
         </div>
-        
+
         <div id="game-area">
             <canvas id="gameCanvas" width="400" height="500"></canvas>
             
@@ -27,30 +27,19 @@
             <div id="startScreen" class="overlay">
                 <h1 id="title">DETERMINATION</h1>
                 <div class="menu-buttons">
-                    <button onclick="startGame('pc')">PC</button>
-                    <button onclick="startGame('mobile')">MOBILE</button>
+                    <button onclick="startGame('pc')">PC (Keyboard)</button>
+                    <button onclick="startGame('mobile')">MOBILE (Touch)</button>
                 </div>
                 <p style="margin-top:20px; font-size:0.8rem; color:#666;">(Click anywhere to wake up the music)</p>
             </div>
+        </div>
 
-            <div id="gameOverScreen" class="overlay hidden">
-                <h1 style="color: red; text-shadow: 0 0 10px red;">STAY DETERMINED...</h1>
-                <button onclick="location.reload()">RETRY</button>
-            </div>
-
-            <div id="mobileControls" class="hidden">
-                <button id="leftBtn">←</button>
-                <button id="upBtn">↑</button>
-                <button id="downBtn">↓</button>
-                <button id="rightBtn">→</button>
-            </div>
+        <!-- NEW: Left and Right Mobile Controls -->
+        <div id="mobileControls" class="hidden">
+            <button id="btnLeft" class="control-btn">⬅️</button>
+            <button id="btnRight" class="control-btn">➡️</button>
         </div>
     </div>
-
-    <!-- Audio setup -->
-    <audio id="menuMusic" loop src="menu.ogg"></audio>
-    <audio id="battleMusic" loop src="battle.ogg"></audio>
-    <audio id="loseMusic" src="lose.ogg"></audio>
 
     <script src="script.js"></script>
 </body>
