@@ -3,71 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Determination: The Breakout</title>
+    <title>Determination: The Complete Boss Fight</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="game-wrapper">
-        <div id="crt-overlay"></div>
+    <div id="wrapper">
+        <div id="crt-scanlines"></div>
         
+        <!-- HUD Layer -->
         <div class="hud">
-            <div class="stats">HP: <span id="hp-val">20</span> / 20</div>
-            <div class="score-board">
-                <div>HIGH SCORE: <span id="hi-score">0</span></div>
-                <div>SCORE: <span id="score">0</span></div>
-            </div>
-            <div id="timer-display" class="hidden">02:00</div>
+            <div class="score-container">HI-SCORE: <span id="hi-score">0</span></div>
+            <div id="timer" class="hidden">02:00</div>
+            <div class="score-container">SCORE: <span id="score">0</span></div>
         </div>
 
         <canvas id="gameCanvas"></canvas>
 
-        <!-- Main Menu -->
-        <div id="main-menu" class="overlay">
-            <h1 class="glitch" data-text="DETERMINATION">DETERMINATION</h1>
-            <div class="menu-content">
-                <div class="platform-choice">
-                    <button onclick="Game.init('pc')">PLAY ON PC</button>
-                    <button onclick="Game.init('mobile')">PLAY ON MOBILE</button>
+        <!-- UI Overlays -->
+        <div id="menu" class="overlay">
+            <h1 class="glitch-text" data-text="DETERMINATION">DETERMINATION</h1>
+            <div class="platform-buttons">
+                <button onclick="Engine.init('pc')">PLAY ON PC</button>
+                <button onclick="Engine.init('mobile')">PLAY ON MOBILE</button>
+            </div>
+            <div class="settings-box">
+                <div class="setting">
+                    <label>MUSIC</label>
+                    <input type="range" id="musicVol" min="0" max="1" step="0.05" value="0.5">
                 </div>
-                <div class="settings">
-                    <div class="setting-row">
-                        <label>MUSIC</label>
-                        <input type="range" id="music-vol" min="0" max="1" step="0.1" value="0.5">
-                    </div>
-                    <div class="setting-row">
-                        <label>SFX</label>
-                        <input type="range" id="sfx-vol" min="0" max="1" step="0.1" value="0.5">
-                    </div>
+                <div class="setting">
+                    <label>SFX</label>
+                    <input type="range" id="sfxVol" min="0" max="1" step="0.05" value="0.5">
                 </div>
             </div>
             <div class="legend">
-                <span>[S] SLOW</span> <span>[🍄] GROW</span> <span>[⭐] MULTI</span> <span>[💣] HURT</span>
+                [S] Slow | [🍄] Grow | [⭐] Multi | [💣] DMG
             </div>
         </div>
 
-        <!-- Dialogue System -->
-        <div id="dialogue-container" class="hidden">
-            <div class="diag-box">
-                <div id="portrait"></div>
-                <div class="diag-text-wrap">
-                    <div id="speaker-name"></div>
-                    <div id="diag-text"></div>
+        <div id="dialogue-box" class="hidden">
+            <div class="diag-layout">
+                <div id="portrait">💣</div>
+                <div class="text-content">
+                    <div id="speaker">BOMB</div>
+                    <div id="message"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Choice Screen -->
-        <div id="choice-wrap" class="hidden">
-            <button class="choice-btn kill" onclick="Game.resolveChoice('kill')">[ KILL ]</button>
-            <button class="choice-btn spare" onclick="Game.resolveChoice('spare')">[ SPARE ]</button>
+        <div id="choice-ui" class="hidden">
+            <button class="choice-btn kill" onclick="Engine.resolveChoice('kill')">[ KILL ]</button>
+            <button class="choice-btn spare" onclick="Engine.resolveChoice('spare')">[ SPARE ]</button>
         </div>
 
-        <!-- Mobile Touch Slider -->
-        <div id="touch-zone" class="hidden">
-            <span>DRAG TO MOVE</span>
+        <div id="mobile-ctrl" class="hidden">
+            <div class="track">
+                <div id="handle"></div>
+            </div>
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
