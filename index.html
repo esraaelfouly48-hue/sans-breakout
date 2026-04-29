@@ -3,33 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sans Breakout - Buffed</title>
+    <title>Sans Breakout: Bad Time Edition</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="game-container">
         <div class="hud">
-            <span>SCORE: <b id="score">0</b></span>
-            <span>LV: <b id="level">1</b></span>
             <span>HP: <b id="hp">20</b></span>
+            <span>SCORE: <b id="score">0</b></span>
         </div>
 
         <div id="game-area">
             <canvas id="gameCanvas" width="400" height="500"></canvas>
             
-            <div id="bossDialogue" class="overlay hidden">
-                <div class="dialogue-box">
-                    <span id="bossName">SANS:</span>
-                    <p id="dialogueText"></p>
+            <!-- Dialogue Box -->
+            <div id="dialogueBox" class="overlay hidden">
+                <div class="dialogue-content">
+                    <div id="portrait">💣</div>
+                    <div class="text-wrapper">
+                        <span id="speakerName">BOMB:</span>
+                        <p id="dialogueText">...</p>
+                    </div>
                 </div>
+                <div class="skip-prompt">[TAP TO CONTINUE]</div>
             </div>
 
+            <!-- Start Menu -->
             <div id="startScreen" class="overlay">
-                <h1 id="title">DETERMINATION</h1>
-                <div class="menu-buttons">
-                    <button onclick="startGame('pc')">PC (Keyboard)</button>
-                    <button onclick="startGame('mobile')">MOBILE (Touch)</button>
-                </div>
+                <h1 class="title">DETERMINATION</h1>
+                <button class="menu-btn" onclick="initGame()">START GAME</button>
             </div>
         </div>
 

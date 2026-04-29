@@ -11,85 +11,56 @@ body {
     touch-action: none;
 }
 
-.game-container {
-    position: relative;
-    width: 400px;
-    max-width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
+.game-container { width: 400px; position: relative; border: 4px solid #fff; }
 
 .hud {
-    width: 100%;
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     padding: 10px;
-    box-sizing: border-box;
-    font-size: 1.1rem;
-    color: #fff;
-    text-shadow: 0 0 8px #fff;
-    border-bottom: 2px solid white;
-    margin-bottom: 10px;
+    border-bottom: 2px solid #fff;
+    font-size: 18px;
 }
 
-#game-area { position: relative; }
-
-canvas {
-    background-color: #000;
-    border: 2px solid #fff;
-    display: block;
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-}
+#game-area { position: relative; width: 400px; height: 500px; }
+canvas { background: #000; display: block; }
 
 .overlay {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.9);
+    background: rgba(0, 0, 0, 0.85);
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    text-align: center;
     z-index: 10;
 }
 
+/* Dialogue Styling */
+.dialogue-content {
+    width: 90%;
+    border: 3px solid #fff;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    background: #000;
+}
+
+#portrait { font-size: 50px; margin-right: 20px; }
+.text-wrapper { flex: 1; }
+#speakerName { color: #ffff00; font-weight: bold; display: block; }
+
 .hidden { display: none !important; }
 
-.menu-buttons button {
-    display: block;
-    width: 200px;
-    margin: 10px auto;
-    padding: 15px;
-    font-size: 1.2rem;
-    background: transparent;
-    color: white;
-    border: 2px solid white;
-    cursor: pointer;
-    font-family: inherit;
-}
-
-#mobileControls {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    padding: 20px 30px;
-    box-sizing: border-box;
-}
-
+/* Mobile Buttons */
+#mobileControls { display: flex; justify-content: space-between; padding: 15px; }
 .control-btn {
-    width: 90px;
-    height: 75px;
-    font-size: 28px;
-    font-weight: bold;
-    background: rgba(255, 255, 255, 0.1);
-    border: 3px solid white;
-    color: white;
-    border-radius: 12px;
-    touch-action: manipulation;
+    width: 100px; height: 60px;
+    background: transparent; border: 2px solid #fff;
+    color: #fff; font-size: 24px;
 }
 
-.control-btn:active {
-    background: white;
-    color: black;
+.menu-btn {
+    padding: 15px 30px; font-size: 24px;
+    background: #000; color: #fff; border: 2px solid #fff;
+    cursor: pointer;
 }
