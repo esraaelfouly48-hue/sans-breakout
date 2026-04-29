@@ -1,26 +1,25 @@
-body { background: #000; color: #fff; margin: 0; font-family: 'Courier New', Courier, monospace; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
-#wrapper { position: relative; width: 400px; height: 600px; border: 4px solid #fff; background: #000; box-shadow: 0 0 20px rgba(255,255,255,0.2); }
+@font-face { font-family: 'UT'; src: url('https://fonts.cdnfonts.com/s/14201/DeterminationMono.woff') format('woff'); }
 
-/* CRT Scanline Effect */
-#crt-scanlines { position: absolute; inset: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.05)); background-size: 100% 2px, 3px 100%; pointer-events: none; z-index: 100; }
+body { background: #1a1a1a; color: #fff; margin: 0; font-family: 'UT', monospace; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+#game-box { position: relative; width: 400px; height: 600px; background: #000; border: 4px solid #fff; box-sizing: border-box; }
 
-.hud { position: absolute; top: 0; width: 100%; display: flex; justify-content: space-between; padding: 10px; box-sizing: border-box; z-index: 10; font-weight: bold; color: #ffff00; text-shadow: 2px 2px #000; }
+.ui-header { display: flex; justify-content: space-between; padding: 10px; font-size: 14px; border-bottom: 2px solid #fff; color: #ffff00; }
+canvas { display: block; background: #000; }
+
+.overlay { position: absolute; inset: 0; background: #000; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ut-title { font-size: 36px; margin-bottom: 30px; letter-spacing: 4px; }
+button { background: #000; color: #fff; border: 2px solid #fff; padding: 12px 24px; margin: 8px; cursor: pointer; font-family: 'UT'; font-size: 18px; }
+button:hover { background: #fff; color: #000; }
+
+#dialogue-ui { position: absolute; bottom: 100px; width: 100%; display: flex; justify-content: center; z-index: 20; }
+.diag-box { width: 90%; height: 90px; border: 3px solid #fff; background: #000; display: flex; padding: 10px; box-sizing: border-box; }
+#portrait { font-size: 40px; border-right: 2px solid #fff; padding-right: 15px; margin-right: 15px; display: flex; align-items: center; }
+#name { color: #ff0000; font-size: 12px; }
+
+#mobile-ctrl { position: absolute; bottom: 0; width: 100%; height: 100px; background: #111; border-top: 2px solid #fff; z-index: 5; }
+.touch-track { position: relative; width: 80%; height: 10px; background: #333; margin: 45px auto; border-radius: 5px; }
+#touch-handle { position: absolute; top: -15px; left: 50%; width: 40px; height: 40px; background: #fff; border: 2px solid #ff0000; transform: translateX(-50%); border-radius: 4px; }
+
 .hidden { display: none !important; }
-
-.overlay { position: absolute; inset: 0; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 50; }
-.glitch-text { font-size: 32px; letter-spacing: 4px; position: relative; }
-
-/* Dialogue Box */
-#dialogue-box { position: absolute; bottom: 80px; width: 360px; left: 20px; height: 100px; border: 4px solid #fff; background: #000; z-index: 60; box-sizing: border-box; padding: 10px; }
-.diag-layout { display: flex; height: 100%; }
-#portrait { width: 60px; font-size: 40px; display: flex; align-items: center; justify-content: center; border-right: 2px solid #fff; margin-right: 15px; }
-#speaker { color: #ff0000; font-size: 12px; margin-bottom: 5px; }
-
-/* Mobile Slider */
-#mobile-ctrl { position: absolute; bottom: 0; width: 100%; height: 80px; background: #111; border-top: 2px solid #fff; z-index: 40; }
-.track { position: relative; width: 80%; height: 8px; background: #333; margin: 36px auto; border-radius: 4px; }
-#handle { position: absolute; top: -16px; left: 50%; width: 40px; height: 40px; background: #fff; border: 2px solid #ff0000; transform: translateX(-50%); cursor: pointer; }
-
-.choice-btn { background: transparent; border: 2px solid #fff; color: #fff; padding: 10px 20px; margin: 10px; cursor: pointer; font-family: inherit; }
-.choice-btn.kill:hover { color: #ff0000; border-color: #ff0000; }
-.choice-btn.spare:hover { color: #00ff00; border-color: #00ff00; }
+.choice-btn.kill { color: #ff0000; border-color: #ff0000; }
+.choice-btn.spare { color: #00ff00; border-color: #00ff00; }

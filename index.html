@@ -3,63 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Determination: The Complete Boss Fight</title>
+    <title>SANS BREAKOUT</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="wrapper">
-        <div id="crt-scanlines"></div>
-        
-        <!-- HUD Layer -->
-        <div class="hud">
-            <div class="score-container">HI-SCORE: <span id="hi-score">0</span></div>
-            <div id="timer" class="hidden">02:00</div>
-            <div class="score-container">SCORE: <span id="score">0</span></div>
+    <div id="game-box">
+        <div class="ui-header">
+            <span>HI-SCORE: <span id="hi-score">0</span></span>
+            <span id="timer" class="hidden">02:00</span>
+            <span>SCORE: <span id="score">0</span></span>
         </div>
 
         <canvas id="gameCanvas"></canvas>
 
-        <!-- UI Overlays -->
+        <!-- MENU -->
         <div id="menu" class="overlay">
-            <h1 class="glitch-text" data-text="DETERMINATION">DETERMINATION</h1>
-            <div class="platform-buttons">
-                <button onclick="Engine.init('pc')">PLAY ON PC</button>
-                <button onclick="Engine.init('mobile')">PLAY ON MOBILE</button>
+            <h1 class="ut-title">DETERMINATION</h1>
+            <div class="menu-btns">
+                <button onclick="Game.start('pc')">PLAY ON PC</button>
+                <button onclick="Engine.unlockAudio(); Game.start('mobile')">PLAY ON MOBILE</button>
             </div>
-            <div class="settings-box">
-                <div class="setting">
-                    <label>MUSIC</label>
-                    <input type="range" id="musicVol" min="0" max="1" step="0.05" value="0.5">
-                </div>
-                <div class="setting">
-                    <label>SFX</label>
-                    <input type="range" id="sfxVol" min="0" max="1" step="0.05" value="0.5">
-                </div>
+            <div class="settings">
+                <div class="set-row"><span>MUS</span><input type="range" id="m-vol" min="0" max="1" step="0.1" value="0.5"></div>
+                <div class="set-row"><span>SFX</span><input type="range" id="s-vol" min="0" max="1" step="0.1" value="0.5"></div>
             </div>
-            <div class="legend">
-                [S] Slow | [🍄] Grow | [⭐] Multi | [💣] DMG
-            </div>
+            <p class="legend">[S] Slow | [🍄] Big | [⭐] Multi | [💣] DMG</p>
         </div>
 
-        <div id="dialogue-box" class="hidden">
-            <div class="diag-layout">
+        <!-- DIALOGUE -->
+        <div id="dialogue-ui" class="hidden">
+            <div class="diag-box">
                 <div id="portrait">💣</div>
-                <div class="text-content">
-                    <div id="speaker">BOMB</div>
-                    <div id="message"></div>
+                <div class="diag-body">
+                    <div id="name">BOMB</div>
+                    <div id="text"></div>
                 </div>
             </div>
         </div>
 
+        <!-- ENDING CHOICES -->
         <div id="choice-ui" class="hidden">
-            <button class="choice-btn kill" onclick="Engine.resolveChoice('kill')">[ KILL ]</button>
-            <button class="choice-btn spare" onclick="Engine.resolveChoice('spare')">[ SPARE ]</button>
+            <button class="choice-btn kill" onclick="Game.resolve('kill')">[ KILL ]</button>
+            <button class="choice-btn spare" onclick="Game.resolve('spare')">[ SPARE ]</button>
         </div>
 
+        <!-- MOBILE CONTROL PAD -->
         <div id="mobile-ctrl" class="hidden">
-            <div class="track">
-                <div id="handle"></div>
-            </div>
+            <div class="touch-track"><div id="touch-handle"></div></div>
         </div>
     </div>
     <script src="script.js"></script>
