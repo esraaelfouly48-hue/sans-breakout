@@ -3,43 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sans Breakout: Bad Time Edition</title>
+    <title>Determination: The Breakout</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="game-container">
+    <div class="game-wrapper">
+        <div id="crt-overlay"></div>
+        
         <div class="hud">
-            <span>HP: <b id="hp">20</b></span>
-            <span>SCORE: <b id="score">0</b></span>
+            <div class="stats">HP: <span id="hp-val">20</span> / 20</div>
+            <div class="score-board">
+                <div>HIGH SCORE: <span id="hi-score">0</span></div>
+                <div>SCORE: <span id="score">0</span></div>
+            </div>
+            <div id="timer-display" class="hidden">02:00</div>
         </div>
 
-        <div id="game-area">
-            <canvas id="gameCanvas" width="400" height="500"></canvas>
-            
-            <!-- Dialogue Box -->
-            <div id="dialogueBox" class="overlay hidden">
-                <div class="dialogue-content">
-                    <div id="portrait">💣</div>
-                    <div class="text-wrapper">
-                        <span id="speakerName">BOMB:</span>
-                        <p id="dialogueText">...</p>
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Main Menu -->
+        <div id="main-menu" class="overlay">
+            <h1 class="glitch" data-text="DETERMINATION">DETERMINATION</h1>
+            <div class="menu-content">
+                <div class="platform-choice">
+                    <button onclick="Game.init('pc')">PLAY ON PC</button>
+                    <button onclick="Game.init('mobile')">PLAY ON MOBILE</button>
+                </div>
+                <div class="settings">
+                    <div class="setting-row">
+                        <label>MUSIC</label>
+                        <input type="range" id="music-vol" min="0" max="1" step="0.1" value="0.5">
+                    </div>
+                    <div class="setting-row">
+                        <label>SFX</label>
+                        <input type="range" id="sfx-vol" min="0" max="1" step="0.1" value="0.5">
                     </div>
                 </div>
-                <div class="skip-prompt">[TAP TO CONTINUE]</div>
             </div>
-
-            <!-- Start Menu -->
-            <div id="startScreen" class="overlay">
-                <h1 class="title">DETERMINATION</h1>
-                <button class="menu-btn" onclick="initGame()">START GAME</button>
+            <div class="legend">
+                <span>[S] SLOW</span> <span>[🍄] GROW</span> <span>[⭐] MULTI</span> <span>[💣] HURT</span>
             </div>
         </div>
 
-        <div id="mobileControls" class="hidden">
-            <button id="btnLeft" class="control-btn"><--</button>
-            <button id="btnRight" class="control-btn">--></button>
+        <!-- Dialogue System -->
+        <div id="dialogue-container" class="hidden">
+            <div class="diag-box">
+                <div id="portrait"></div>
+                <div class="diag-text-wrap">
+                    <div id="speaker-name"></div>
+                    <div id="diag-text"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Choice Screen -->
+        <div id="choice-wrap" class="hidden">
+            <button class="choice-btn kill" onclick="Game.resolveChoice('kill')">[ KILL ]</button>
+            <button class="choice-btn spare" onclick="Game.resolveChoice('spare')">[ SPARE ]</button>
+        </div>
+
+        <!-- Mobile Touch Slider -->
+        <div id="touch-zone" class="hidden">
+            <span>DRAG TO MOVE</span>
         </div>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>
