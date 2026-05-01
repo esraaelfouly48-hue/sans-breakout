@@ -3,55 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SANS BREAKOUT</title>
+    <title>Sans Breakout - DETERMINATION</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="game-box">
-        <div class="ui-header">
-            <span>HI-SCORE: <span id="hi-score">0</span></span>
-            <span id="timer" class="hidden">02:00</span>
-            <span>SCORE: <span id="score">0</span></span>
+    <div id="crt-overlay"></div>
+
+    <div id="game-container">
+        <!-- Audio Unlock Screen (Crucial for modern browsers) -->
+        <div id="boot-screen" class="overlay active">
+            <h2>CLICK ANYWHERE TO START</h2>
+            <p>Initializing Audio Context...</p>
         </div>
 
-        <canvas id="gameCanvas"></canvas>
+        <!-- Main Menu -->
+        <div id="menu-screen" class="overlay">
+            <h1 class="title">DETERMINATION</h1>
+            
+            <div class="menu-layout">
+                <div class="controls-box">
+                    <h3>SELECT PLATFORM</h3>
+                    <button class="btn" id="btn-pc">PLAY ON PC</button>
+                    <button class="btn" id="btn-mobile">PLAY ON MOBILE</button>
+                    <p class="sub-text">PC: Mouse or L/R Arrows</p>
+                </div>
 
-        <!-- MENU -->
-        <div id="menu" class="overlay">
-            <h1 class="ut-title">DETERMINATION</h1>
-            <div class="menu-btns">
-                <button onclick="Game.start('pc')">PLAY ON PC</button>
-                <button onclick="Engine.unlockAudio(); Game.start('mobile')">PLAY ON MOBILE</button>
+                <div class="settings-box">
+                    <h3>SETTINGS</h3>
+                    <div class="slider-row">
+                        <span>MUS</span>
+                        <input type="range" id="vol-music" min="0" max="1" step="0.05" value="0.5">
+                    </div>
+                    <div class="slider-row">
+                        <span>SFX</span>
+                        <input type="range" id="vol-sfx" min="0" max="1" step="0.05" value="0.5">
+                    </div>
+                </div>
             </div>
-            <div class="settings">
-                <div class="set-row"><span>MUS</span><input type="range" id="m-vol" min="0" max="1" step="0.1" value="0.5"></div>
-                <div class="set-row"><span>SFX</span><input type="range" id="s-vol" min="0" max="1" step="0.1" value="0.5"></div>
+            
+            <div class="legend">
+                DROPS: [S]=Slow | [🍄]=Grow | [⭐]=Multi | [💣]=Damage
             </div>
-            <p class="legend">[S] Slow | [🍄] Big | [⭐] Multi | [💣] DMG</p>
         </div>
 
-        <!-- DIALOGUE -->
-        <div id="dialogue-ui" class="hidden">
-            <div class="diag-box">
-                <div id="portrait">💣</div>
-                <div class="diag-body">
-                    <div id="name">BOMB</div>
-                    <div id="text"></div>
+        <!-- HUD -->
+        <div id="hud" class="hidden">
+            <div class="hud-top">
+                <span>HI-SCORE: <span id="ui-hiscore">0</span></span>
+                <span id="ui-timer" class="hidden">02:00</span>
+                <span>SCORE: <span id="ui-score">0</span></span>
+            </div>
+            <div class="hud-bottom">
+                <div class="hp-container">
+                    HP <div class="hp-bar-bg"><div id="hp-bar-fill"></div></div> <span id="ui-hp">20/20</span>
                 </div>
             </div>
         </div>
 
-        <!-- ENDING CHOICES -->
-        <div id="choice-ui" class="hidden">
-            <button class="choice-btn kill" onclick="Game.resolve('kill')">[ KILL ]</button>
-            <button class="choice-btn spare" onclick="Game.resolve('spare')">[ SPARE ]</button>
+        <canvas id="game-canvas" width="480" height="640"></canvas>
+
+        <!-- Undertale Dialogue Box -->
+        <div id="dialogue-box" class="hidden">
+            <div class="dialogue-inner">
+                <div id="portrait">💣</div>
+                <div class="text-area">
+                    <div id="speaker-name">BOMB</div>
+                    <div id="dialogue-text"></div>
+                </div>
+            </div>
         </div>
 
-        <!-- MOBILE CONTROL PAD -->
-        <div id="mobile-ctrl" class="hidden">
-            <div class="touch-track"><div id="touch-handle"></div></div>
+        <!-- Final Choice -->
+        <div id="choice-screen" class="overlay hidden">
+            <h2 class="judgement">JUDGEMENT</h2>
+            <div class="choice-btns">
+                <button class="btn fight" id="btn-kill">[ FIGHT ]</button>
+                <button class="btn mercy" id="btn-spare">[ MERCY ]</button>
+            </div>
+        </div>
+
+        <!-- Mobile Touch Slider -->
+        <div id="mobile-controls" class="hidden">
+            <div class="slider-track" id="touch-track">
+                <div class="slider-thumb" id="touch-thumb"></div>
+            </div>
         </div>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>
