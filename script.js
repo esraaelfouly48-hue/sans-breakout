@@ -334,3 +334,4 @@ document.addEventListener('keydown', (e) => {
         Game.attackEnemy(10);
     }
 });
+//i guess this gotta work ??
