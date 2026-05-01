@@ -1,413 +1,341 @@
-/* ================= RESET & BASE ================= */
 * {
-    box-sizing: border-box;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-    margin: 0;
-    padding: 0;
-    background: #000;
-    color: #fff;
-    font-family: 'Press Start 2P', cursive;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    overflow: hidden;
+  margin: 0;
+  padding: 0;
+  background: #000;
+  color: #fff;
+  font-family: 'Press Start 2P', cursive;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
 }
 
-/* ================= CRT SCANLINE EFFECT ================= */
 #crt-overlay {
-    position: fixed;
-    inset: 0;
-    background:
-        linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%),
-        linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06));
-    background-size: 100% 2px, 3px 100%;
-    z-index: 100;
-    pointer-events: none;
-    opacity: 0.9;
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%),
+    linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06));
+  background-size: 100% 2px, 3px 100%;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.9;
 }
 
-/* ================= MAIN CONTAINER ================= */
 #game-container {
-    position: relative;
-    width: 480px;
-    height: 640px;
-    background: #000;
-    border: 4px solid #fff;
-    overflow: hidden;
-    box-shadow:
-        0 0 20px rgba(255,255,255,0.2),
-        inset 0 0 10px rgba(255,255,255,0.05);
+  position: relative;
+  width: 480px;
+  height: 640px;
+  background: #000;
+  border: 4px solid #fff;
+  overflow: hidden;
+  box-shadow:
+    0 0 20px rgba(255,255,255,0.2),
+    inset 0 0 10px rgba(255,255,255,0.05);
 }
 
 canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at center, #111 0%, #000 70%);
+  display: block;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at center, #111 0%, #000 70%);
 }
 
-/* ================= OVERLAYS ================= */
 .overlay {
-    position: absolute;
-    inset: 0;
-    background: #000;
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 50;
-    padding: 20px;
-    text-align: center;
+  position: absolute;
+  inset: 0;
+  background: #000;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+  padding: 20px;
+  text-align: center;
 }
 
 .overlay.active {
-    display: flex;
+  display: flex;
 }
 
 .hidden {
-    display: none !important;
+  display: none !important;
 }
 
-/* ================= TYPOGRAPHY ================= */
 h1.title {
-    font-size: 32px;
-    letter-spacing: 2px;
-    text-shadow: 2px 2px #ff0000;
-    margin-bottom: 40px;
-    animation: pulse 2s infinite;
-    line-height: 1.3;
+  font-size: 32px;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px #ff0000;
+  margin-bottom: 20px;
+  animation: pulse 2s infinite;
+  line-height: 1.3;
 }
 
 @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.8; }
-    100% { opacity: 1; }
+  0% { opacity: 1; }
+  50% { opacity: 0.8; }
+  100% { opacity: 1; }
 }
 
-/* ================= BUTTONS ================= */
+.menu-topbar {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #fff;
+  margin-bottom: 20px;
+  padding: 0 10px;
+}
+
 .btn {
-    font-family: 'Press Start 2P', cursive;
-    background: #000;
-    color: #fff;
-    border: 2px solid #fff;
-    padding: 14px;
-    font-size: 13px;
-    margin: 10px;
-    cursor: pointer;
-    transition: 0.2s;
+  font-family: 'Press Start 2P', cursive;
+  background: #000;
+  color: #fff;
+  border: 2px solid #fff;
+  padding: 14px;
+  font-size: 13px;
+  margin: 10px;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
 .btn:hover {
-    background: #fff;
-    color: #000;
+  background: #fff;
+  color: #000;
 }
 
 .btn:active {
-    transform: scale(0.97);
+  transform: scale(0.97);
 }
 
 .btn.fight {
-    color: #ff0000;
-    border-color: #ff0000;
+  color: #ff0000;
+  border-color: #ff0000;
 }
 
 .btn.fight:hover {
-    background: #ff0000;
-    color: #000;
+  background: #ff0000;
+  color: #000;
 }
 
 .btn.mercy {
-    color: #ffff00;
-    border-color: #ffff00;
+  color: #ffff00;
+  border-color: #ffff00;
 }
 
 .btn.mercy:hover {
-    background: #ffff00;
-    color: #000;
+  background: #ffff00;
+  color: #000;
 }
 
-/* ================= MENUS ================= */
 .menu-layout {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    gap: 24px;
-    margin-bottom: 35px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 24px;
+  margin-bottom: 22px;
 }
 
 .controls-box,
 .settings-box {
-    border: 2px dashed #555;
-    padding: 18px;
+  border: 2px dashed #555;
+  padding: 18px;
 }
 
 .controls-box h3,
 .settings-box h3 {
-    color: #888;
-    font-size: 12px;
-    margin: 0 0 12px;
-}
-
-.menu-actions {
-    margin-top: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  color: #888;
+  font-size: 12px;
+  margin: 0 0 12px;
 }
 
 .slider-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    font-size: 11px;
-    gap: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 11px;
+  gap: 10px;
 }
 
 input[type=range] {
-    width: 70%;
-    cursor: pointer;
-    accent-color: #fff;
+  width: 70%;
+  cursor: pointer;
+  accent-color: #fff;
 }
 
 .sub-text {
-    font-size: 10px;
-    color: #888;
-    margin-top: 10px;
+  font-size: 10px;
+  color: #888;
+  margin-top: 10px;
+  line-height: 1.6;
 }
 
 .legend {
-    font-size: 10px;
-    color: #aaa;
-    line-height: 1.6;
-    border-top: 2px solid #333;
-    padding-top: 10px;
-    width: 100%;
+  font-size: 10px;
+  color: #aaa;
+  line-height: 1.6;
+  border-top: 2px solid #333;
+  padding-top: 10px;
+  width: 100%;
 }
 
-/* ================= HUD ================= */
 #hud {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 15px;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 15px;
 }
 
 .hud-top {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    gap: 8px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  gap: 8px;
 }
 
 .hud-bottom {
-    display: flex;
-    align-items: flex-end;
+  display: flex;
+  align-items: flex-end;
 }
 
 .hp-container {
-    display: flex;
-    align-items: center;
-    font-size: 13px;
-    gap: 10px;
-    font-weight: bold;
-    flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  gap: 10px;
+  font-weight: bold;
+  flex-wrap: wrap;
 }
 
 .hp-bar-bg {
-    width: 100px;
-    height: 14px;
-    background: #880000;
-    border: 1px solid #fff;
-    overflow: hidden;
+  width: 100px;
+  height: 14px;
+  background: #880000;
+  border: 1px solid #fff;
+  overflow: hidden;
 }
 
 #hp-bar-fill,
 #enemy-hp-bar-fill {
-    width: 100%;
-    height: 100%;
-    background: #ffff00;
-    transition: width 0.2s;
+  width: 100%;
+  height: 100%;
+  background: #ffff00;
+  transition: width 0.15s linear;
 }
 
-.enemy-bar {
-    width: 160px;
-    margin-top: 8px;
-}
-
-/* ================= BATTLE SCREEN ================= */
-#battle-screen {
-    background: rgba(0, 0, 0, 0.82);
-    justify-content: space-between;
-    padding: 18px;
-    pointer-events: auto;
-}
-
-.battle-top {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    margin-top: 18px;
-}
-
-.enemy-card {
-    width: 100%;
-    max-width: 360px;
-    border: 2px solid #fff;
-    padding: 16px;
-    background: rgba(0, 0, 0, 0.65);
-}
-
-.enemy-name {
-    font-size: 15px;
-    color: #ff5555;
-    margin-bottom: 8px;
-}
-
-.enemy-hp-text {
-    font-size: 11px;
-    margin-bottom: 8px;
-    color: #ddd;
-}
-
-.battle-center {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-}
-
-.battle-info {
-    border: 2px dashed #555;
-    padding: 14px;
-    width: 100%;
-    max-width: 360px;
-    font-size: 11px;
-    line-height: 1.8;
-    color: #ccc;
-    background: rgba(0, 0, 0, 0.5);
-}
-
-.battle-actions {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 18px;
-    flex-wrap: wrap;
-}
-
-/* ================= DIALOGUE BOX ================= */
 #dialogue-box {
-    position: absolute;
-    bottom: 80px;
-    left: 5%;
-    width: 90%;
-    min-height: 120px;
-    background: #000;
-    border: 4px solid #fff;
-    z-index: 40;
-    padding: 15px;
+  position: absolute;
+  bottom: 80px;
+  left: 5%;
+  width: 90%;
+  min-height: 130px;
+  background: #000;
+  border: 4px solid #fff;
+  z-index: 40;
+  padding: 15px;
 }
 
 .dialogue-inner {
-    display: flex;
-    align-items: flex-start;
-    height: 100%;
+  display: flex;
+  align-items: flex-start;
+  height: 100%;
 }
 
 #portrait {
-    font-size: 50px;
-    margin-right: 20px;
-    border-right: 2px solid #fff;
-    padding-right: 20px;
-    height: 100%;
-    display: flex;
-    align-items: center;
+  font-size: 50px;
+  margin-right: 20px;
+  border-right: 2px solid #fff;
+  padding-right: 20px;
+  height: 100%;
+  display: flex;
+  align-items: center;
 }
 
 .text-area {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    flex: 1;
-    min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
 }
 
 #speaker-name {
-    color: #ff0000;
-    font-size: 13px;
+  color: #ff0000;
+  font-size: 13px;
 }
 
 #dialogue-text {
-    font-size: 13px;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
-/* ================= CHOICE SCREEN ================= */
 #choice-screen {
-    background: rgba(0, 0, 0, 0.92);
+  background: rgba(0, 0, 0, 0.92);
 }
 
 .judgement {
-    font-size: 24px;
-    color: #fff;
-    margin-bottom: 12px;
-    text-shadow: 2px 2px #ff0000;
+  font-size: 24px;
+  color: #fff;
+  margin-bottom: 12px;
+  text-shadow: 2px 2px #ff0000;
 }
 
 .choice-text {
-    font-size: 11px;
-    color: #aaa;
-    margin-bottom: 24px;
-    line-height: 1.8;
+  font-size: 11px;
+  color: #aaa;
+  margin-bottom: 24px;
+  line-height: 1.8;
 }
 
 .choice-btns {
-    display: flex;
-    gap: 14px;
-    flex-wrap: wrap;
-    justify-content: center;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-/* ================= MOBILE CONTROLS ================= */
 #mobile-controls {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 100px;
-    background: #111;
-    border-top: 2px solid #fff;
-    z-index: 20;
-    padding: 0 20px;
-    display: flex;
-    align-items: center;
-    touch-action: none;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 104px;
+  background: #111;
+  border-top: 2px solid #fff;
+  z-index: 20;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  touch-action: none;
 }
 
 #touch-track {
-    position: relative;
-    width: 100%;
-    height: 70px;
-    border: 2px dashed #555;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  position: relative;
+  width: 100%;
+  height: 70px;
+  border: 2px dashed #555;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 #touch-hint {
-    font-size: 10px;
-    color: #aaa;
+  font-size: 10px;
+  color: #aaa;
 }
