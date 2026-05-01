@@ -1,5 +1,6 @@
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
+
 const GAME_WIDTH = canvas.width;
 const GAME_HEIGHT = canvas.height;
 
@@ -7,7 +8,9 @@ const EFFECT_DURATION = 5000;
 
 /* ================= AUDIO ================= */
 const AudioSys = {
-    musicVol: 0.5, sfxVol: 0.5,
+    musicVol: 0.5,
+    sfxVol: 0.5,
+
     sounds: {
         menu: new Audio('menu.ogg'),
         battle: new Audio('battle.ogg'),
@@ -22,12 +25,12 @@ const AudioSys = {
             s.play().then(() => s.pause()).catch(() => {});
         });
 
-        this.updateVolumes();
-
         this.sounds.menu.loop = true;
         this.sounds.battle.loop = true;
         this.sounds.boss.loop = true;
         this.sounds.talk.loop = true;
+
+        this.updateVolumes();
     },
 
     updateVolumes() {
@@ -43,7 +46,7 @@ const AudioSys = {
 
     playMusic(track) {
         this.stopAllMusic();
-        let t = this.sounds[track];
+        const t = this.sounds[track];
         t.currentTime = 0;
         t.volume = this.musicVol;
         t.play().catch(() => {});
@@ -54,14 +57,14 @@ const AudioSys = {
     },
 
     playSFX(track) {
-        let t = this.sounds[track];
+        const t = this.sounds[track];
         t.currentTime = 0;
         t.volume = this.sfxVol;
         t.play().catch(() => {});
     },
 
     playTalkLoop() {
-        let t = this.sounds.talk;
+        const t = this.sounds.talk;
         if (t.paused) {
             t.currentTime = 0;
             t.volume = this.sfxVol;
@@ -70,7 +73,7 @@ const AudioSys = {
     },
 
     stopTalkLoop() {
-        let t = this.sounds.talk;
+        const t = this.sounds.talk;
         t.pause();
         t.currentTime = 0;
     }
@@ -207,6 +210,7 @@ class Blaster {
             this.state = 'charge';
             AudioSys.playSFX('blast');
         }
+
         if (this.timer === 35) this.state = 'fire';
         if (this.timer <= 0) return true;
 
@@ -246,6 +250,7 @@ const Game = {
     hp: 100,
     score: 0,
     timer: 120,
+    shake: 0,
 
     paddle: null,
     balls: [],
@@ -269,18 +274,19 @@ const Game = {
 
     start(platform) {
         Input.init(platform);
+
         document.getElementById('menu-screen').classList.remove('active');
         document.getElementById('hud').classList.remove('hidden');
 
-        if (platform === 'mobile')
+        if (platform === 'mobile') {
             document.getElementById('mobile-controls').classList.remove('hidden');
+        }
 
         this.hp = this.maxHp;
         this.score = 0;
 
         this.paddle = new Paddle();
         this.balls = [new Ball(240, 300, 4, -4)];
-
         this.generateBricks();
 
         this.state = 'PLAY';
@@ -298,56 +304,9 @@ const Game = {
 
     takeDamage(d) {
         this.hp -= d;
+        this.shake = 12;
+
         if (this.hp <= 0) location.reload();
-    },
-
-    startDialogue() {
-        this.state = 'DIALOGUE';
-        AudioSys.stopAllMusic();
-
-        const lines = [
-            "YOU DID WELL.",
-            "BUT THIS IS NOT OVER.",
-            "SURVIVE."
-        ];
-
-        let i = 0;
-        let box = document.getElementById('dialogue-box');
-        let text = document.getElementById('dialogue-text');
-
-        box.classList.remove('hidden');
-
-        const next = () => {
-            if (i >= lines.length) {
-                box.classList.add('hidden');
-                this.startBoss();
-                return;
-            }
-
-            text.innerText = "";
-            let t = lines[i];
-            let c = 0;
-
-            AudioSys.playTalkLoop();
-
-            let interval = setInterval(() => {
-                text.innerText += t[c++];
-                if (c >= t.length) {
-                    clearInterval(interval);
-                    AudioSys.stopTalkLoop();
-                    i++;
-                    setTimeout(next, 1000);
-                }
-            }, 40);
-        };
-
-        next();
-    },
-
-    startBoss() {
-        this.state = 'BOSS';
-        this.timer = 140;
-        AudioSys.playMusic('boss');
     },
 
     loop() {
@@ -355,12 +314,24 @@ const Game = {
 
         if (this.state === 'MENU' || this.state === 'BOOT') return;
 
+        ctx.save();
+
+        /* SCREEN SHAKE */
+        if (this.shake > 0) {
+            const dx = (Math.random() - 0.5) * this.shake;
+            const dy = (Math.random() - 0.5) * this.shake;
+            ctx.translate(dx, dy);
+            this.shake *= 0.85;
+        }
+
         ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
         this.paddle.update();
         this.paddle.draw();
 
-        for (let b of this.balls) {
+        /* BALLS */
+        for (let i = this.balls.length - 1; i >= 0; i--) {
+            let b = this.balls[i];
             b.update(this.paddle);
             b.draw();
 
@@ -374,26 +345,39 @@ const Game = {
                 ) {
                     br.active = false;
                     b.dy *= -1;
-                    this.score++;
+                    this.score += 10;
+                }
+            }
+
+            /* FALL DAMAGE */
+            if (b.y - b.r > GAME_HEIGHT) {
+                this.balls.splice(i, 1);
+                this.takeDamage(5);
+
+                if (this.balls.length === 0 && this.hp > 0) {
+                    this.balls.push(new Ball(GAME_WIDTH / 2, GAME_HEIGHT / 2, 4, -4));
                 }
             }
         }
 
         this.bricks.forEach(b => b.draw());
 
-        if (this.bricks.every(b => !b.active) && this.state === 'PLAY')
-            this.startDialogue();
-
+        /* BOSS */
         if (this.state === 'BOSS') {
-            if (Math.random() < 0.02)
+            if (Math.random() < 0.02) {
                 this.blasters.push(new Blaster());
+            }
 
             for (let i = this.blasters.length - 1; i >= 0; i--) {
-                if (this.blasters[i].update(this.paddle))
+                if (this.blasters[i].update(this.paddle)) {
                     this.blasters.splice(i, 1);
-                else this.blasters[i].draw();
+                } else {
+                    this.blasters[i].draw();
+                }
             }
         }
+
+        ctx.restore();
     }
 };
 
