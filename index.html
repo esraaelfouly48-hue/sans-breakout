@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>DETERMINATION</title>
+
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -11,7 +12,6 @@
   <div id="crt-overlay"></div>
 
   <div id="game-container">
-    <!-- BOOT / MENU -->
     <div id="boot-screen" class="overlay active">
       <h2>CLICK TO START</h2>
       <p>INITIALIZING AUDIO...</p>
@@ -57,7 +57,6 @@
       </div>
     </div>
 
-    <!-- HUD -->
     <div id="hud" class="hidden">
       <div class="hud-top">
         <span>HI-SCORE: <span id="ui-hiscore">0</span></span>
@@ -76,21 +75,18 @@
       </div>
     </div>
 
-    <!-- CANVAS -->
     <canvas id="game-canvas" width="480" height="640"></canvas>
 
-    <!-- BOSS / DIALOGUE -->
     <div id="dialogue-box" class="hidden">
       <div class="dialogue-inner">
-        <div id="portrait">☠️</div>
+        <div id="portrait">💣</div>
         <div class="text-area">
-          <div id="speaker-name">BOSS</div>
+          <div id="speaker-name">BOMB</div>
           <div id="dialogue-text"></div>
         </div>
       </div>
     </div>
 
-    <!-- CHOICE -->
     <div id="choice-screen" class="overlay hidden">
       <h2 class="judgement">JUDGEMENT</h2>
       <p class="choice-text">THE TIMER HAS ENDED.</p>
@@ -101,7 +97,6 @@
       </div>
     </div>
 
-    <!-- MOBILE CONTROL ZONE -->
     <div id="mobile-controls" class="hidden">
       <div id="touch-track">
         <div id="touch-hint">SLIDE TO MOVE</div>

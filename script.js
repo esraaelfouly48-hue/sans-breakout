@@ -10,6 +10,7 @@ const AudioSys = {
   unlocked: false,
   musicVol: 0.5,
   sfxVol: 0.5,
+
   menuMusic: new Audio('menu.ogg'),
   battleStart: new Audio('battle-start.mp3'),
   battleMusic: new Audio('battle.ogg'),
@@ -96,12 +97,15 @@ const Game = {
   state: 'BOOT',
   mode: 'pc',
   phase: 'menu',
+
   score: 0,
   hiscore: Number(localStorage.getItem('determination_hiscore') || 0),
+
   hp: 100,
   maxHp: 100,
-  round: 1,
+
   wave: 1,
+  round: 1,
 
   paddle: {
     x: W / 2 - 55,
@@ -110,7 +114,6 @@ const Game = {
     h: 14,
     baseW: 110,
     targetX: W / 2 - 55,
-    vx: 0,
     speed: 340
   },
 
@@ -121,6 +124,7 @@ const Game = {
   particles: [],
   flowers: [],
   followers: [],
+
   effects: {
     slowUntil: 0,
     growUntil: 0
@@ -129,38 +133,33 @@ const Game = {
   keys: { left: false, right: false },
   mouseX: W / 2,
   mobileTouchActive: false,
-  mobileTouchX: null,
 
   bossTimer: 120000,
-  bossTimerStart: 0,
   bossNextBlasterAt: 0,
-  bossLineHoldUntil: 0,
   bossTransitioning: false,
   climaxChoiceShown: false,
   endlessMode: false,
-  reclaimAnimating: false,
-  releaseAnimating: false,
-  dialogueRunning: false,
-  dialogueBusy: false,
+
   dialogueText: '',
   dialogueIndex: 0,
-  dialogueCharTimer: 0,
-  dialogueLine: '',
 
   lastFrameTime: 0,
   shake: 0,
-  gameOverTimer: 0,
 
   init() {
     this.canvas = document.getElementById('game-canvas');
     this.ctx = this.canvas.getContext('2d');
     this.ctx.imageSmoothingEnabled = false;
-    this.setHiScore(this.hiscore);
-    AudioSys.init();
+
     this.bindUI();
     this.bindInput();
-    this.drawBootFrame();
+
+    AudioSys.init();
+    this.setHiScore(this.hiscore);
+    this.showBoot();
+
     AudioSys.playMenu();
+    window.addEventListener('load', () => AudioSys.playMenu());
     requestAnimationFrame(this.loop.bind(this));
   },
 
@@ -200,12 +199,6 @@ const Game = {
     window.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowLeft') this.keys.left = true;
       if (e.key === 'ArrowRight') this.keys.right = true;
-
-      if (e.key === ' ' || e.key === 'Enter') {
-        if (this.phase === 'boss' && this.balls.length) {
-          // no-op; keeps keyboard feel alive
-        }
-      }
     });
 
     window.addEventListener('keyup', (e) => {
@@ -217,7 +210,7 @@ const Game = {
       const rect = this.canvas.getBoundingClientRect();
       const x = (e.clientX - rect.left) * (W / rect.width);
       this.mouseX = x;
-      if (this.mode === 'pc' && (this.phase === 'breakout' || this.phase === 'endless' || this.phase === 'boss')) {
+      if (this.mode === 'pc' && this.isPlayablePhase()) {
         this.paddle.targetX = x - this.paddle.w / 2;
       }
     });
@@ -230,7 +223,6 @@ const Game = {
       const y = (t.clientY - rect.top) * (H / rect.height);
       if (y > H - 104) {
         this.mobileTouchActive = true;
-        this.mobileTouchX = x;
         this.paddle.targetX = x - this.paddle.w / 2;
       }
     }, { passive: false });
@@ -241,37 +233,64 @@ const Game = {
       const t = e.touches[0];
       const rect = this.canvas.getBoundingClientRect();
       const x = (t.clientX - rect.left) * (W / rect.width);
-      this.mobileTouchX = x;
       this.paddle.targetX = x - this.paddle.w / 2;
     }, { passive: false });
 
     window.addEventListener('touchend', () => {
       this.mobileTouchActive = false;
-      this.mobileTouchX = null;
     });
   },
 
+  showBoot() {
+    this.state = 'BOOT';
+    document.getElementById('boot-screen').classList.add('active');
+    document.getElementById('menu-screen').classList.remove('active');
+    document.getElementById('hud').classList.add('hidden');
+    document.getElementById('choice-screen').classList.add('hidden');
+    document.getElementById('dialogue-box').classList.add('hidden');
+    document.getElementById('mobile-controls').classList.add('hidden');
+    this.drawBootFrame();
+  },
+
   showMenu() {
-    this.state = 'menu';
+    this.state = 'MENU';
     this.phase = 'menu';
     this.endlessMode = false;
     this.climaxChoiceShown = false;
-    this.dialogueRunning = false;
-    this.dialogueBusy = false;
-    this.resetVisuals();
-    this.hideAllScreens();
+    this.bossTransitioning = false;
+    this.clearWorld();
+
+    document.getElementById('boot-screen').classList.remove('active');
     document.getElementById('menu-screen').classList.add('active');
     document.getElementById('hud').classList.add('hidden');
-    document.getElementById('mobile-controls').classList.add('hidden');
-    document.getElementById('dialogue-box').classList.add('hidden');
     document.getElementById('choice-screen').classList.add('hidden');
-    document.getElementById('ui-hiscore-menu').innerText = String(this.hiscore);
+    document.getElementById('dialogue-box').classList.add('hidden');
+    document.getElementById('mobile-controls').classList.add('hidden');
+
+    this.updateHUD();
     AudioSys.playMenu();
     this.drawMenuFrame();
   },
 
   startGame(mode) {
     this.mode = mode;
+    this.state = 'PLAY';
+    this.phase = 'breakout';
+    this.score = 0;
+    this.hp = this.maxHp;
+    this.wave = 1;
+    this.round = 1;
+    this.endlessMode = false;
+    this.climaxChoiceShown = false;
+    this.bossTransitioning = false;
+    this.effects.slowUntil = 0;
+    this.effects.growUntil = 0;
+    this.clearWorld();
+
+    this.paddle.w = this.paddle.baseW;
+    this.paddle.x = W / 2 - this.paddle.w / 2;
+    this.paddle.targetX = this.paddle.x;
+
     document.getElementById('menu-screen').classList.remove('active');
     document.getElementById('boot-screen').classList.remove('active');
     document.getElementById('hud').classList.remove('hidden');
@@ -279,31 +298,14 @@ const Game = {
     document.getElementById('choice-screen').classList.add('hidden');
     document.getElementById('dialogue-box').classList.add('hidden');
 
-    this.score = 0;
-    this.hp = this.maxHp;
-    this.wave = 1;
-    this.round = 1;
-    this.effects.slowUntil = 0;
-    this.effects.growUntil = 0;
-    this.climaxChoiceShown = false;
-    this.bossTransitioning = false;
-    this.endlessMode = false;
-    this.reclaimAnimating = false;
-    this.releaseAnimating = false;
-    this.dialogueRunning = false;
-    this.dialogueBusy = false;
-    this.clearWorld();
-
-    this.paddle.w = this.paddle.baseW;
-    this.paddle.x = W / 2 - this.paddle.w / 2;
-    this.paddle.targetX = this.paddle.x;
-
     this.createBreakoutWave(this.wave);
-    this.phase = 'breakout';
-    this.state = 'playing';
     this.updateHUD();
     AudioSys.playBattleStartThenLoop();
     this.flashText('ROUND 1');
+  },
+
+  isPlayablePhase() {
+    return this.phase === 'breakout' || this.phase === 'boss' || this.phase === 'endless';
   },
 
   clearWorld() {
@@ -316,16 +318,17 @@ const Game = {
     this.followers = [];
   },
 
-  resetVisuals() {
-    this.clearWorld();
-    this.shake = 0;
+  setHiScore(value) {
+    this.hiscore = value;
+    localStorage.setItem('determination_hiscore', String(this.hiscore));
+    this.updateHUD();
   },
 
-  hideAllScreens() {
-    ['menu-screen', 'boot-screen', 'choice-screen'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.classList.remove('active');
-    });
+  updateHiScore() {
+    if (this.score > this.hiscore) {
+      this.hiscore = this.score;
+      localStorage.setItem('determination_hiscore', String(this.hiscore));
+    }
   },
 
   updateHUD() {
@@ -346,24 +349,11 @@ const Game = {
       if (this.phase === 'boss' || this.climaxChoiceShown) timerText.classList.remove('hidden');
       else timerText.classList.add('hidden');
 
-      const t = Math.max(0, this.bossTimer);
-      const s = Math.ceil(t / 1000);
+      const ms = Math.max(0, this.bossTimer);
+      const s = Math.ceil(ms / 1000);
       const mm = String(Math.floor(s / 60)).padStart(2, '0');
       const ss = String(s % 60).padStart(2, '0');
       timerText.innerText = `${mm}:${ss}`;
-    }
-  },
-
-  setHiScore(value) {
-    this.hiscore = value;
-    localStorage.setItem('determination_hiscore', String(this.hiscore));
-    this.updateHUD();
-  },
-
-  updateHiScore() {
-    if (this.score > this.hiscore) {
-      this.hiscore = this.score;
-      localStorage.setItem('determination_hiscore', String(this.hiscore));
     }
   },
 
@@ -400,26 +390,23 @@ const Game = {
           w: brickW,
           h: brickH,
           row: r,
-          hp: 1,
           alive: true
         });
       }
     }
 
-    const ballSpeed = 230 + (waveNumber - 1) * 18;
-    this.balls.push(this.makeBall(W / 2, H - 80, rand(-0.7, 0.7), -1, ballSpeed));
+    const speed = 230 + (waveNumber - 1) * 18;
+    this.balls.push(this.makeBall(W / 2, H - 80, rand(-0.7, 0.7), -1, speed));
   },
 
   makeBall(x, y, dxNorm, dyNorm, speed) {
     const len = Math.hypot(dxNorm, dyNorm) || 1;
-    const dx = dxNorm / len;
-    const dy = dyNorm / len;
     return {
       x,
       y,
       r: 5,
-      vx: dx * speed,
-      vy: dy * speed,
+      vx: (dxNorm / len) * speed,
+      vy: (dyNorm / len) * speed,
       alive: true,
       trail: []
     };
@@ -439,180 +426,6 @@ const Game = {
     };
   },
 
-  startBossTransition() {
-    if (this.bossTransitioning) return;
-    this.bossTransitioning = true;
-    this.phase = 'transition';
-    AudioSys.stopMusic();
-    this.dialogueRunning = true;
-    this.typeDialogue(
-      'BOSS',
-      '☠️',
-      'SO... YOU MADE IT THIS FAR.\nTHE REAL TRIAL BEGINS NOW.',
-      () => {
-        setTimeout(() => {
-          this.startBossFight();
-        }, 900);
-      }
-    );
-  },
-
-  typeDialogue(speaker, portrait, text, done) {
-    this.dialogueBusy = true;
-    const box = document.getElementById('dialogue-box');
-    const speakerName = document.getElementById('speaker-name');
-    const portraitEl = document.getElementById('portrait');
-    const dialogueText = document.getElementById('dialogue-text');
-
-    speakerName.innerText = speaker;
-    portraitEl.innerText = portrait;
-    dialogueText.innerText = '';
-    box.classList.remove('hidden');
-
-    this.dialogueText = text;
-    this.dialogueIndex = 0;
-
-    const step = () => {
-      if (this.dialogueIndex >= this.dialogueText.length) {
-        this.dialogueBusy = false;
-        if (done) done();
-        return;
-      }
-
-      const ch = this.dialogueText[this.dialogueIndex++];
-      dialogueText.innerText += ch;
-
-      if (ch !== ' ' && ch !== '\n') {
-        AudioSys.playSfx(AudioSys.talkSfx);
-      }
-
-      const delay = ch === '\n' ? 90 : ch === '.' || ch === '!' || ch === '?' ? 110 : 25;
-      setTimeout(step, delay);
-    };
-
-    step();
-  },
-
-  startBossFight() {
-    this.dialogueRunning = false;
-    document.getElementById('dialogue-box').classList.add('hidden');
-    this.phase = 'boss';
-    this.bossTransitioning = false;
-    this.bossTimer = 120000;
-    this.bossTimerStart = now();
-    this.bossNextBlasterAt = now() + 1300;
-    this.blasters = [];
-    this.items = [];
-    this.flowers = [];
-    this.followers = [];
-    this.particles.push({ type: 'boss-arrive', x: W / 2, y: 120, life: 1800, maxLife: 1800 });
-    AudioSys.playBossMusic();
-    this.showBossIntro();
-    this.updateHUD();
-  },
-
-  showBossIntro() {
-    const box = document.getElementById('dialogue-box');
-    const speakerName = document.getElementById('speaker-name');
-    const portraitEl = document.getElementById('portrait');
-    const dialogueText = document.getElementById('dialogue-text');
-
-    speakerName.innerText = 'BOSS';
-    portraitEl.innerText = '☠️';
-    dialogueText.innerText = 'THIS IS THE BOSS PHASE.\nDODGE THE BLASTERS.';
-    box.classList.remove('hidden');
-
-    setTimeout(() => {
-      box.classList.add('hidden');
-    }, 1800);
-  },
-
-  startClimaxChoice() {
-    if (this.climaxChoiceShown) return;
-    this.phase = 'choice';
-    this.climaxChoiceShown = true;
-    AudioSys.stopMusic();
-    document.getElementById('choice-screen').classList.add('active');
-    this.updateHUD();
-  },
-
-  startReclaimSequence() {
-    this.climaxChoiceShown = false;
-    document.getElementById('choice-screen').classList.remove('active');
-    document.getElementById('dialogue-box').classList.add('hidden');
-    this.phase = 'reclaim';
-    this.reclaimAnimating = true;
-    this.particles.push({ type: 'burst', x: W / 2, y: 120, life: 2000, maxLife: 2000 });
-    this.flashText('RECLAIM');
-    this.followers.push({
-      x: -40,
-      y: H - 120,
-      vx: 48,
-      life: 3200,
-      maxLife: 3200,
-      phase: 'enter'
-    });
-
-    this.particles.push({
-      type: 'boss-burst',
-      x: W / 2,
-      y: 128,
-      life: 900,
-      maxLife: 900
-    });
-
-    setTimeout(() => {
-      this.flowers.push({ x: W / 2 - 5, y: H - 96, life: 2600, maxLife: 2600 });
-    }, 1400);
-
-    setTimeout(() => {
-      this.startEndlessMode();
-    }, 3600);
-  },
-
-  startReleaseSequence() {
-    this.climaxChoiceShown = false;
-    document.getElementById('choice-screen').classList.remove('active');
-    document.getElementById('dialogue-box').classList.add('hidden');
-    this.phase = 'release';
-    this.releaseAnimating = true;
-    this.flashText('RELEASE');
-    setTimeout(() => {
-      this.showMenu();
-    }, 2500);
-  },
-
-  startEndlessMode() {
-    this.endlessMode = true;
-    this.phase = 'endless';
-    this.wave = 1;
-    this.score += 500;
-    this.updateHiScore();
-    this.createBreakoutWave(this.wave);
-    this.items = [];
-    this.blasters = [];
-    this.bossTimer = 0;
-    AudioSys.playBattleStartThenLoop();
-    this.flashText('ENDLESS MODE');
-    this.updateHUD();
-  },
-
-  addParticles(x, y, color, count = 8, speed = 120) {
-    for (let i = 0; i < count; i++) {
-      const a = rand(0, Math.PI * 2);
-      const s = rand(speed * 0.4, speed);
-      this.particles.push({
-        type: 'pixel',
-        x, y,
-        vx: Math.cos(a) * s,
-        vy: Math.sin(a) * s,
-        color,
-        life: rand(350, 900),
-        maxLife: 900
-      });
-    }
-  },
-
   spawnItem(x, y) {
     const roll = Math.random();
     let type = 'slow';
@@ -622,7 +435,10 @@ const Game = {
     else type = 'bomb';
 
     this.items.push({
-      x, y, w: 14, h: 14,
+      x,
+      y,
+      w: 14,
+      h: 14,
       vy: 95,
       type
     });
@@ -658,29 +474,202 @@ const Game = {
   },
 
   gameOver() {
-    if (this.state === 'gameover') return;
-    this.state = 'gameover';
+    if (this.state === 'GAMEOVER') return;
+    this.state = 'GAMEOVER';
     this.phase = 'gameover';
     AudioSys.stopMusic();
     AudioSys.playSfx(AudioSys.loseSfx);
     this.updateHiScore();
     this.updateHUD();
     this.flashText(`FINAL SCORE ${this.score}`);
+    setTimeout(() => this.showMenu(), 2600);
+  },
 
-    this.gameOverTimer = now() + 2600;
+  startBossTransition() {
+    if (this.bossTransitioning) return;
+    this.bossTransitioning = true;
+    this.phase = 'transition';
+    AudioSys.stopMusic();
+
+    this.typeDialogue(
+      'BOMB',
+      '💣',
+      'SO... YOU MADE IT THIS FAR.\nTHE REAL TRIAL BEGINS NOW.',
+      () => {
+        setTimeout(() => this.startBossFight(), 900);
+      }
+    );
+  },
+
+  typeDialogue(speaker, portrait, text, done) {
+    const box = document.getElementById('dialogue-box');
+    const speakerName = document.getElementById('speaker-name');
+    const portraitEl = document.getElementById('portrait');
+    const dialogueText = document.getElementById('dialogue-text');
+
+    speakerName.innerText = speaker;
+    portraitEl.innerText = portrait;
+    dialogueText.innerText = '';
+    box.classList.remove('hidden');
+
+    this.dialogueText = text;
+    this.dialogueIndex = 0;
+
+    const step = () => {
+      if (this.dialogueIndex >= this.dialogueText.length) {
+        if (done) done();
+        return;
+      }
+
+      const ch = this.dialogueText[this.dialogueIndex++];
+      dialogueText.innerText += ch;
+
+      if (ch !== ' ' && ch !== '\n') {
+        AudioSys.playSfx(AudioSys.talkSfx);
+      }
+
+      const delay = ch === '\n' ? 90 : (ch === '.' || ch === '!' || ch === '?') ? 110 : 25;
+      setTimeout(step, delay);
+    };
+
+    step();
+  },
+
+  startBossFight() {
+    document.getElementById('dialogue-box').classList.add('hidden');
+    this.phase = 'boss';
+    this.bossTransitioning = false;
+    this.bossTimer = 120000;
+    this.bossNextBlasterAt = now() + 1100;
+    this.blasters = [];
+    this.items = [];
+    this.flowers = [];
+    this.followers = [];
+    this.particles.push({ type: 'boss-arrive', x: W / 2, y: 120, life: 1800, maxLife: 1800 });
+    AudioSys.playBossMusic();
+    this.showBossIntro();
+    this.updateHUD();
+  },
+
+  showBossIntro() {
+    const box = document.getElementById('dialogue-box');
+    const speakerName = document.getElementById('speaker-name');
+    const portraitEl = document.getElementById('portrait');
+    const dialogueText = document.getElementById('dialogue-text');
+
+    speakerName.innerText = 'BOMB';
+    portraitEl.innerText = '💣';
+    dialogueText.innerText = 'THIS IS THE BOMB PHASE.\nDODGE THE BLASTERS.';
+    box.classList.remove('hidden');
+
+    setTimeout(() => box.classList.add('hidden'), 1800);
+  },
+
+  startClimaxChoice() {
+    if (this.climaxChoiceShown) return;
+    this.phase = 'choice';
+    this.climaxChoiceShown = true;
+    AudioSys.stopMusic();
+    document.getElementById('choice-screen').classList.add('active');
+    this.updateHUD();
+  },
+
+  startReclaimSequence() {
+    this.climaxChoiceShown = false;
+    document.getElementById('choice-screen').classList.remove('active');
+    document.getElementById('dialogue-box').classList.add('hidden');
+
+    this.phase = 'reclaim';
+    this.particles.push({ type: 'boss-burst', x: W / 2, y: 128, life: 900, maxLife: 900 });
+    this.flashText('RECLAIM');
+
+    this.followers.push({
+      x: -40,
+      y: H - 120,
+      vx: 48,
+      life: 3200,
+      maxLife: 3200,
+      spawnedFlower: false
+    });
+
     setTimeout(() => {
-      this.showMenu();
-    }, 2600);
+      this.flowers.push({ x: W / 2 - 5, y: H - 96, life: 2600, maxLife: 2600 });
+    }, 1400);
+
+    setTimeout(() => this.startEndlessMode(), 3600);
+  },
+
+  startReleaseSequence() {
+    this.climaxChoiceShown = false;
+    document.getElementById('choice-screen').classList.remove('active');
+    document.getElementById('dialogue-box').classList.add('hidden');
+    this.phase = 'release';
+    this.flashText('RELEASE');
+    setTimeout(() => this.showMenu(), 2500);
+  },
+
+  startEndlessMode() {
+    this.endlessMode = true;
+    this.phase = 'endless';
+    this.wave = 1;
+    this.score += 500;
+    this.updateHiScore();
+    this.createBreakoutWave(this.wave);
+    this.items = [];
+    this.blasters = [];
+    this.bossTimer = 0;
+    AudioSys.playBattleStartThenLoop();
+    this.flashText('ENDLESS MODE');
+    this.updateHUD();
+  },
+
+  spawnBlaster() {
+    const x = rint(52, W - 52);
+    this.blasters.push({
+      x,
+      y: 72,
+      beamW: 24,
+      phase: 'telegraph',
+      timer: 1000,
+      fireMs: 900,
+      mouth: 0,
+      dead: false
+    });
+
+    this.particles.push({
+      type: 'warning',
+      x,
+      y: 0,
+      life: 1000,
+      maxLife: 1000
+    });
+  },
+
+  addParticles(x, y, color, count = 8, speed = 120) {
+    for (let i = 0; i < count; i++) {
+      const a = rand(0, Math.PI * 2);
+      const s = rand(speed * 0.4, speed);
+      this.particles.push({
+        type: 'pixel',
+        x,
+        y,
+        vx: Math.cos(a) * s,
+        vy: Math.sin(a) * s,
+        color,
+        life: rand(350, 900),
+        maxLife: 900
+      });
+    }
   },
 
   update(dt, t) {
-    const slow = t < this.effects.slowUntil ? 0.68 : 1;
-    const grow = t < this.effects.growUntil ? 1.6 : 1;
+    const slowFactor = t < this.effects.slowUntil ? 0.68 : 1;
+    const growFactor = t < this.effects.growUntil ? 1.6 : 1;
 
-    this.paddle.w = this.paddle.baseW * grow;
+    this.paddle.w = this.paddle.baseW * growFactor;
     this.paddle.targetX = clamp(this.paddle.targetX, 0, W - this.paddle.w);
 
-    if (this.mode === 'pc' && (this.phase === 'breakout' || this.phase === 'endless' || this.phase === 'boss')) {
+    if (this.mode === 'pc' && this.isPlayablePhase()) {
       if (this.keys.left) this.paddle.targetX -= this.paddle.speed * dt;
       if (this.keys.right) this.paddle.targetX += this.paddle.speed * dt;
     }
@@ -688,33 +677,37 @@ const Game = {
     this.paddle.targetX = clamp(this.paddle.targetX, 0, W - this.paddle.w);
     this.paddle.x += (this.paddle.targetX - this.paddle.x) * Math.min(1, dt * 12);
 
-    if (this.phase === 'breakout' || this.phase === 'endless') {
-      this.updateBalls(dt, t, slow, false);
-      this.updateBricks(dt);
+    if (this.phase === 'breakout') {
+      this.updateBalls(dt, t, slowFactor, false);
+      this.updateBricks();
       this.updateItems(dt);
-      this.updateEndlessOrRoundClear();
+      this.checkWaveClear();
     } else if (this.phase === 'boss') {
-      this.updateBossPhase(dt, t, slow);
+      this.updateBossPhase(dt, t, slowFactor);
+    } else if (this.phase === 'endless') {
+      this.updateBalls(dt, t, slowFactor, false);
+      this.updateBricks();
+      this.updateItems(dt);
+      this.checkEndlessWave();
+    } else if (this.phase === 'transition') {
+      this.updateParticles(dt);
     } else if (this.phase === 'reclaim') {
-      this.updateBalls(dt, t, slow, true);
       this.updateReclaim(dt);
+      this.updateBalls(dt, t, slowFactor, true);
     } else if (this.phase === 'release') {
       this.updateRelease(dt);
     }
 
     this.updateParticles(dt);
 
-    if (this.hp <= 0 && this.state !== 'gameover' && this.phase !== 'menu') {
+    if (this.hp <= 0 && this.state !== 'GAMEOVER') {
       this.gameOver();
     }
 
     this.updateHUD();
   },
 
-  updateBalls(dt, t, slowFactor, ignoreOutOfBoundsLoss) {
-    const gravityKick = 0;
-    const paddleTop = this.paddle.y;
-
+  updateBalls(dt, t, slowFactor, ignoreFallDamage) {
     for (const ball of this.balls) {
       if (!ball.alive) continue;
 
@@ -741,9 +734,6 @@ const Game = {
 
       if (ball.y - ball.r > H) {
         ball.alive = false;
-        if (!ignoreOutOfBoundsLoss) {
-          this.damage(this.phase === 'boss' ? 20 : 10);
-        }
       }
 
       if (this.intersectCircleRect(ball, this.paddle)) {
@@ -753,7 +743,6 @@ const Game = {
         const angle = -Math.PI / 2 + hit * 0.9;
         ball.vx = Math.cos(angle) * speed;
         ball.vy = Math.sin(angle) * speed;
-        AudioSys.playSfx(AudioSys.talkSfx);
       }
 
       if (this.phase === 'breakout' || this.phase === 'endless') {
@@ -764,7 +753,6 @@ const Game = {
             this.score += 10 + brick.row * 2;
             this.updateHiScore();
             this.addParticles(brick.x + brick.w / 2, brick.y + brick.h / 2, '#ffffff', 10, 160);
-            AudioSys.playSfx(AudioSys.talkSfx);
 
             if (Math.random() < 0.20) {
               this.spawnItem(brick.x + brick.w / 2 - 7, brick.y + brick.h / 2 - 7);
@@ -774,14 +762,18 @@ const Game = {
             const overlapRight = brick.x + brick.w - (ball.x + ball.r);
             const overlapTop = ball.y - ball.r - brick.y;
             const overlapBottom = brick.y + brick.h - (ball.y + ball.r);
-            const minOverlap = Math.min(Math.abs(overlapLeft), Math.abs(overlapRight), Math.abs(overlapTop), Math.abs(overlapBottom));
+            const minOverlap = Math.min(
+              Math.abs(overlapLeft),
+              Math.abs(overlapRight),
+              Math.abs(overlapTop),
+              Math.abs(overlapBottom)
+            );
 
             if (minOverlap === Math.abs(overlapLeft) || minOverlap === Math.abs(overlapRight)) {
               ball.vx *= -1;
             } else {
               ball.vy *= -1;
             }
-
             break;
           }
         }
@@ -790,27 +782,24 @@ const Game = {
 
     this.balls = this.balls.filter(b => b.alive);
 
-    if (!this.balls.length && (this.phase === 'breakout' || this.phase === 'endless')) {
-      this.damage(20);
-      this.balls.push(this.makeBall(
-        this.paddle.x + this.paddle.w / 2,
-        this.paddle.y - 18,
-        rand(-0.65, 0.65),
-        -1,
-        this.phase === 'endless' ? 260 + this.wave * 18 : 230
-      ));
-    }
+    if (!this.balls.length) {
+      if (!ignoreFallDamage) {
+        this.damage(this.phase === 'boss' ? 20 : 10);
+      }
 
-    if (this.phase === 'boss') {
-      this.balls = this.balls.filter(b => b.alive);
-      if (!this.balls.length) {
-        this.damage(20);
-        this.balls.push(this.makeBall(this.paddle.x + this.paddle.w / 2, this.paddle.y - 18, rand(-0.65, 0.65), -1, 255));
+      if (this.phase === 'breakout' || this.phase === 'endless' || this.phase === 'boss') {
+        this.balls.push(this.makeBall(
+          this.paddle.x + this.paddle.w / 2,
+          this.paddle.y - 18,
+          rand(-0.65, 0.65),
+          -1,
+          this.phase === 'endless' ? 260 + this.wave * 18 : 230
+        ));
       }
     }
   },
 
-  updateBricks(dt) {
+  updateBricks() {
     this.bricks = this.bricks.filter(b => b.alive);
   },
 
@@ -825,19 +814,19 @@ const Game = {
     this.items = this.items.filter(item => !item.collected && item.y < H + 20);
   },
 
-  updateEndlessOrRoundClear() {
-    if (this.phase !== 'breakout' && this.phase !== 'endless') return;
+  checkWaveClear() {
+    if (this.phase === 'breakout' && this.bricks.length === 0 && !this.bossTransitioning) {
+      this.startBossTransition();
+    }
+  },
 
+  checkEndlessWave() {
     if (this.bricks.length === 0) {
-      if (this.phase === 'breakout') {
-        this.startBossTransition();
-      } else if (this.phase === 'endless') {
-        this.wave++;
-        this.score += 250;
-        this.updateHiScore();
-        this.flashText(`WAVE ${this.wave}`);
-        this.createBreakoutWave(this.wave);
-      }
+      this.wave++;
+      this.score += 250;
+      this.updateHiScore();
+      this.flashText(`WAVE ${this.wave}`);
+      this.createBreakoutWave(this.wave);
     }
   },
 
@@ -857,14 +846,17 @@ const Game = {
     for (const b of this.blasters) {
       if (b.phase === 'telegraph') {
         b.timer -= dt * 1000;
+        b.mouth = 0;
         if (b.timer <= 0) {
           b.phase = 'fire';
           b.timer = b.fireMs;
+          b.mouth = 1;
           AudioSys.playSfx(AudioSys.blasterSfx);
           this.addParticles(b.x, b.y, '#ff00ff', 12, 180);
         }
       } else if (b.phase === 'fire') {
         b.timer -= dt * 1000;
+        b.mouth = 1;
         if (b.timer <= 0) {
           b.dead = true;
         }
@@ -876,82 +868,60 @@ const Game = {
     for (const b of this.blasters) {
       if (b.phase === 'fire') {
         const beamRect = { x: b.x - b.beamW / 2, y: 0, w: b.beamW, h: H };
+
+        if (this.intersectRect(this.paddle, beamRect)) {
+          this.damage(14 * dt * 6);
+        }
+
         for (const ball of this.balls) {
           if (this.intersectCircleRect(ball, beamRect)) {
             ball.vx *= 0.96;
             ball.vy *= 0.96;
           }
         }
-
-        if (this.intersectRect(this.paddle, beamRect)) {
-          this.damage(14 * dt * 6);
-        }
       }
     }
 
     this.updateBalls(dt, t, slowFactor, false);
-
-    if (this.hp <= 0) return;
-  },
-
-  spawnBlaster() {
-    const x = rint(52, W - 52);
-    this.blasters.push({
-      x,
-      y: 74,
-      beamW: 22,
-      telegraphW: 2,
-      telegraphMs: 1000,
-      fireMs: 850,
-      phase: 'telegraph',
-      timer: 1000,
-      dead: false
-    });
-
-    this.particles.push({
-      type: 'warning',
-      x,
-      y: 0,
-      life: 1000,
-      maxLife: 1000
-    });
   },
 
   updateReclaim(dt) {
     for (const f of this.followers) {
       f.x += f.vx * dt;
       f.life -= dt * 1000;
+
       if (f.x > W / 2 - 6 && !f.spawnedFlower) {
         this.flowers.push({ x: f.x, y: H - 96, life: 2200, maxLife: 2200 });
         f.spawnedFlower = true;
       }
     }
+
     this.followers = this.followers.filter(f => f.life > 0);
     this.flowers = this.flowers.filter(f => f.life > 0);
-    if (this.bossTimer > 0) this.bossTimer = 0;
   },
 
   updateRelease(dt) {
-    // just a fade moment before menu return
     this.flowers = this.flowers.filter(f => f.life > 0);
   },
 
   updateParticles(dt) {
     for (const p of this.particles) {
       p.life -= dt * 1000;
+
       if (p.type === 'pixel' || p.type === 'text' || p.type === 'warning') {
         p.x += (p.vx || 0) * dt;
         p.y += (p.vy || 0) * dt;
       }
     }
+
     this.particles = this.particles.filter(p => p.life > 0);
   },
 
   intersectRect(a, b) {
     return a.x < b.x + b.w &&
-           a.x + (a.w || a.r * 2) > b.x &&
-           a.y < b.y + b.h &&
-           a.y + (a.h || a.r * 2) > b.y;
+      a.x + (a.w || a.r * 2) > b.x &&
+      a.y < b.y + b.h &&
+      a.y + (a.h || a.r * 2) > b.y;
   },
 
   intersectCircleRect(circle, rect) {
@@ -960,6 +930,17 @@ const Game = {
     const dx = circle.x - cx;
     const dy = circle.y - cy;
     return dx * dx + dy * dy < circle.r * circle.r;
+  },
+
+  drawPixelSprite(c, x, y, pattern, palette, scale = 2) {
+    for (let row = 0; row < pattern.length; row++) {
+      for (let col = 0; col < pattern[row].length; col++) {
+        const ch = pattern[row][col];
+        if (ch === '.') continue;
+        c.fillStyle = palette[ch] || '#fff';
+        c.fillRect(x + col * scale, y + row * scale, scale, scale);
+      }
+    }
   },
 
   drawBootFrame() {
@@ -978,67 +959,6 @@ const Game = {
     for (let i = 0; i < 24; i++) {
       c.fillRect(rint(0, W - 1), rint(0, H - 1), 2, 2);
     }
-  },
-
-  draw(t) {
-    const c = this.ctx;
-    c.save();
-
-    if (this.shake > 0) {
-      const sx = rand(-this.shake, this.shake);
-      const sy = rand(-this.shake, this.shake);
-      c.translate(sx, sy);
-      this.shake *= 0.88;
-      if (this.shake < 0.3) this.shake = 0;
-    }
-
-    c.clearRect(0, 0, W, H);
-    c.fillStyle = '#000';
-    c.fillRect(0, 0, W, H);
-
-    this.drawStars(c);
-
-    if (this.phase === 'boss' || this.phase === 'choice' || this.phase === 'reclaim') {
-      this.drawBossSprite(c, this.phase === 'reclaim' ? 1 - Math.min(1, (this.bossTimer / 1000)) : 1);
-    }
-
-    if (this.phase === 'reclaim') {
-      this.drawBossBurst(c);
-    }
-
-    if (this.phase === 'release') {
-      this.drawReleaseFade(c);
-    }
-
-    if (this.phase === 'breakout' || this.phase === 'endless') {
-      this.drawBricks(c);
-      this.drawItems(c);
-    }
-
-    if (this.phase === 'boss') {
-      this.drawBossArena(c);
-      this.drawBlasters(c, t);
-    }
-
-    this.drawPaddle(c);
-    this.drawBalls(c);
-    this.drawFlowers(c);
-    this.drawFollowers(c);
-    this.drawParticles(c);
-
-    if (this.phase === 'transition') {
-      this.drawTransitionText(c);
-    }
-
-    if (this.phase === 'choice') {
-      this.drawClimaxText(c);
-    }
-
-    if (this.state === 'gameover') {
-      this.drawGameOver(c);
-    }
-
-    c.restore();
   },
 
   drawStars(c) {
@@ -1069,18 +989,71 @@ const Game = {
 
   drawItems(c) {
     for (const item of this.items) {
-      let col = '#fff';
-      if (item.type === 'slow') col = '#66ffff';
-      if (item.type === 'grow') col = '#66ff66';
-      if (item.type === 'star') col = '#ffff66';
-      if (item.type === 'bomb') col = '#ff6666';
+      const x = item.x - 2;
+      const y = item.y - 2;
 
-      c.fillStyle = col;
-      c.fillRect(item.x, item.y, item.w, item.h);
-      c.fillStyle = '#000';
-      c.fillRect(item.x + 4, item.y + 4, 2, 2);
-      c.fillRect(item.x + 8, item.y + 4, 2, 2);
-      c.fillRect(item.x + 4, item.y + 8, 6, 2);
+      if (item.type === 'slow') {
+        const feather = [
+          "..W.....",
+          ".WWW....",
+          "WWWWW...",
+          ".WWW....",
+          "..W.....",
+          "..W.....",
+          ".W......",
+          "W......."
+        ];
+        this.drawPixelSprite(c, x, y, feather, { W: '#e8e8e8' }, 2);
+      }
+
+      if (item.type === 'grow') {
+        const mushroom = [
+          "..RRRR..",
+          ".RWWWWR.",
+          "RRRRRRRR",
+          "..BBBB..",
+          "..BBBB..",
+          "..BBBB..",
+          "...BB...",
+          "..BBBB.."
+        ];
+        this.drawPixelSprite(c, x, y, mushroom, {
+          R: '#ff4b4b',
+          W: '#ffffff',
+          B: '#d8b07a'
+        }, 2);
+      }
+
+      if (item.type === 'star') {
+        const star = [
+          "...Y....",
+          "..YYY...",
+          "YYYYYYY.",
+          "..YYY...",
+          "...Y....",
+          "...Y....",
+          "..Y.Y...",
+          ".Y...Y.."
+        ];
+        this.drawPixelSprite(c, x, y, star, { Y: '#ffe95a' }, 2);
+      }
+
+      if (item.type === 'bomb') {
+        const bomb = [
+          "...K....",
+          "..KKK...",
+          ".KKKKK..",
+          ".KKKKK..",
+          ".KKKKK..",
+          "..KKK...",
+          "...K....",
+          "...F...."
+        ];
+        this.drawPixelSprite(c, x, y, bomb, {
+          K: '#1b1b1b',
+          F: '#ff9b2f'
+        }, 2);
+      }
     }
   },
 
@@ -1107,52 +1080,83 @@ const Game = {
   },
 
   drawBossSprite(c) {
-    const x = W / 2 - 40;
-    const y = 22;
+    const x = W / 2 - 38;
+    const y = 18;
+
     c.fillStyle = '#000';
-    c.fillRect(x - 6, y - 6, 92, 82);
+    c.fillRect(x - 8, y - 8, 90, 86);
+
     c.fillStyle = '#fff';
-    c.fillRect(x + 10, y + 10, 60, 52);
+    c.fillRect(x + 8, y + 8, 58, 48);
+
     c.fillStyle = '#000';
-    c.fillRect(x + 20, y + 22, 8, 8);
-    c.fillRect(x + 44, y + 22, 8, 8);
-    c.fillRect(x + 24, y + 38, 24, 4);
+    c.fillRect(x + 18, y + 20, 8, 8);
+    c.fillRect(x + 42, y + 20, 8, 8);
+    c.fillRect(x + 24, y + 36, 22, 4);
+
     c.fillStyle = '#ff0000';
-    c.fillRect(x + 0, y + 4, 12, 12);
-    c.fillRect(x + 68, y + 4, 12, 12);
+    c.fillRect(x, y + 4, 12, 12);
+    c.fillRect(x + 66, y + 4, 12, 12);
     c.fillRect(x + 4, y + 16, 6, 6);
-    c.fillRect(x + 72, y + 16, 6, 6);
+    c.fillRect(x + 70, y + 16, 6, 6);
   },
 
-  drawBossBurst(c) {
-    const life = 1 - Math.min(1, this.particles.find(p => p.type === 'boss-burst') ? this.particles.find(p => p.type === 'boss-burst').life / 900 : 1);
-    const r = 30 + life * 100;
-    c.strokeStyle = `rgba(255,255,255,${1 - life})`;
-    c.lineWidth = 3;
-    c.beginPath();
-    c.arc(W / 2, 128, r, 0, Math.PI * 2);
-    c.stroke();
+  drawBlaster(c, b) {
+    const open = b.phase === 'fire';
+    const wobble = open ? 1 : 0;
+
+    const faceX = b.x - 22;
+    const faceY = 18;
+
+    c.fillStyle = 'rgba(0,0,0,0.45)';
+    c.fillRect(faceX - 4, faceY - 4, 52, 54);
+
+    c.fillStyle = '#fff';
+    c.fillRect(faceX, faceY, 44, 38);
+
+    c.fillStyle = '#000';
+    c.fillRect(faceX + 7, faceY + 10, 6, 6);
+    c.fillRect(faceX + 31, faceY + 10, 6, 6);
+
+    c.fillStyle = '#ff0000';
+    c.fillRect(faceX + 2, faceY + 2, 10, 8);
+    c.fillRect(faceX + 32, faceY + 2, 10, 8);
+    c.fillRect(faceX + 4, faceY + 18, 6, 4);
+    c.fillRect(faceX + 34, faceY + 18, 6, 4);
+
+    if (!open) {
+      c.fillStyle = '#000';
+      c.fillRect(faceX + 15, faceY + 24, 14, 4);
+      c.fillRect(faceX + 13, faceY + 26, 18, 2);
+    } else {
+      c.fillStyle = '#000';
+      c.fillRect(faceX + 13 - wobble, faceY + 22, 18 + wobble * 2, 10);
+      c.fillStyle = '#ff00ff';
+      c.fillRect(faceX + 15, faceY + 24, 14, 2);
+      c.fillStyle = '#fff';
+      c.fillRect(faceX + 17, faceY + 26, 10, 2);
+    }
+
+    c.fillStyle = 'rgba(255,0,0,0.35)';
+    c.fillRect(b.x - 1, 0, 2, H);
+
+    if (b.phase === 'fire') {
+      c.fillStyle = 'rgba(0,255,255,0.18)';
+      c.fillRect(b.x - b.beamW / 2 - 8, 0, b.beamW + 16, H);
+      c.fillStyle = '#00ffff';
+      c.fillRect(b.x - b.beamW / 2, 0, b.beamW, H);
+      c.fillStyle = '#ff00ff';
+      c.fillRect(b.x - b.beamW / 2 + 2, 0, 2, H);
+      c.fillRect(b.x + b.beamW / 2 - 4, 0, 2, H);
+    } else {
+      c.fillStyle = '#ff0000';
+      c.fillRect(b.x - 2, 0, 4, H);
+    }
   },
 
-  drawBlasters(c, t) {
+  drawBlasters(c) {
     for (const b of this.blasters) {
-      const isFire = b.phase === 'fire';
-      if (b.phase === 'telegraph') {
-        c.fillStyle = 'rgba(255,0,0,0.3)';
-        c.fillRect(b.x - 1, 0, 2, H);
-        c.fillStyle = '#ff0000';
-        c.fillRect(b.x - 3, 10, 6, 14);
-        c.fillStyle = '#fff';
-        c.fillRect(b.x - 2, 14, 4, 4);
-      } else if (isFire) {
-        c.fillStyle = 'rgba(0,255,255,0.15)';
-        c.fillRect(b.x - b.beamW / 2 - 6, 0, b.beamW + 12, H);
-        c.fillStyle = '#00ffff';
-        c.fillRect(b.x - b.beamW / 2, 0, b.beamW, H);
-        c.fillStyle = '#ff00ff';
-        c.fillRect(b.x - b.beamW / 2 + 2, 0, 2, H);
-        c.fillRect(b.x + b.beamW / 2 - 4, 0, 2, H);
-      }
+      this.drawBlaster(c, b);
     }
   },
 
@@ -1183,6 +1187,7 @@ const Game = {
   drawParticles(c) {
     for (const p of this.particles) {
       const alpha = clamp(p.life / p.maxLife, 0, 1);
+
       if (p.type === 'text') {
         c.fillStyle = `rgba(255,255,255,${alpha})`;
         c.font = '12px "Press Start 2P"';
@@ -1216,11 +1221,6 @@ const Game = {
     c.fillText('RECLAIM OR RELEASE', W / 2, H / 2 + 70);
   },
 
-  drawReleaseFade(c) {
-    c.fillStyle = 'rgba(255,255,255,0.06)';
-    c.fillRect(0, 0, W, H);
-  },
-
   drawGameOver(c) {
     c.fillStyle = 'rgba(0,0,0,0.7)';
     c.fillRect(0, 0, W, H);
@@ -1232,16 +1232,79 @@ const Game = {
     c.fillText(`FINAL SCORE: ${this.score}`, W / 2, H / 2 + 24);
   },
 
+  draw(t) {
+    const c = this.ctx;
+    c.save();
+
+    if (this.shake > 0) {
+      const sx = rand(-this.shake, this.shake);
+      const sy = rand(-this.shake, this.shake);
+      c.translate(sx, sy);
+      this.shake *= 0.88;
+      if (this.shake < 0.3) this.shake = 0;
+    }
+
+    c.clearRect(0, 0, W, H);
+    c.fillStyle = '#000';
+    c.fillRect(0, 0, W, H);
+
+    this.drawStars(c);
+
+    if (this.phase === 'boss' || this.phase === 'choice' || this.phase === 'reclaim') {
+      this.drawBossSprite(c);
+    }
+
+    if (this.phase === 'reclaim') {
+      c.fillStyle = 'rgba(255,255,255,0.06)';
+      c.fillRect(0, 0, W, H);
+    }
+
+    if (this.phase === 'breakout' || this.phase === 'endless') {
+      this.drawBricks(c);
+      this.drawItems(c);
+    }
+
+    if (this.phase === 'boss') {
+      this.drawBossArena(c);
+      this.drawBlasters(c);
+    }
+
+    this.drawPaddle(c);
+    this.drawBalls(c);
+    this.drawFlowers(c);
+    this.drawFollowers(c);
+    this.drawParticles(c);
+
+    if (this.phase === 'transition') {
+      this.drawTransitionText(c);
+    }
+
+    if (this.phase === 'choice') {
+      this.drawClimaxText(c);
+    }
+
+    if (this.state === 'GAMEOVER') {
+      this.drawGameOver(c);
+    }
+
+    c.restore();
+  },
+
   loop(timestamp) {
     const t = timestamp || now();
     if (!this.lastFrameTime) this.lastFrameTime = t;
     const dt = clamp((t - this.lastFrameTime) / 1000, 0, 0.033);
     this.lastFrameTime = t;
 
-    if (this.state !== 'menu') {
+    if (
+      this.state === 'PLAY' ||
+      this.phase === 'transition' ||
+      this.phase === 'reclaim' ||
+      this.phase === 'release'
+    ) {
       this.update(dt, t);
       this.draw(t);
-    } else {
+    } else if (this.state === 'MENU' || this.state === 'BOOT') {
       this.drawMenuFrame();
     }
 

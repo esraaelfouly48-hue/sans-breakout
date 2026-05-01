@@ -45,8 +45,7 @@ canvas {
   display: block;
   width: 100%;
   height: 100%;
-  background:
-    radial-gradient(circle at center, #111 0%, #000 70%);
+  background: radial-gradient(circle at center, #111 0%, #000 70%);
 }
 
 .overlay {
@@ -228,8 +227,7 @@ input[type=range] {
   overflow: hidden;
 }
 
-#hp-bar-fill,
-#enemy-hp-bar-fill {
+#hp-bar-fill {
   width: 100%;
   height: 100%;
   background: #ffff00;
