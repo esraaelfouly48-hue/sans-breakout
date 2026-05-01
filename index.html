@@ -1,66 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Battle Game</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>DETERMINATION</title>
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <div id="boot-screen" class="screen active">
-    <div class="center-box">
-      <h1>Battle Game</h1>
-      <p>Tap to start</p>
+
+    <!-- CRT EFFECT -->
+    <div id="crt-overlay"></div>
+
+    <!-- GAME CONTAINER -->
+    <div id="game-container">
+
+        <!-- ================= BOOT SCREEN ================= -->
+        <div id="boot-screen" class="overlay active">
+            <h2>CLICK ANYWHERE TO START</h2>
+            <p>Initializing Audio...</p>
+        </div>
+
+        <!-- ================= MENU ================= -->
+        <div id="menu-screen" class="overlay">
+
+            <h1 class="title">DETERMINATION</h1>
+
+            <div class="menu-layout">
+
+                <!-- CONTROLS -->
+                <div class="controls-box">
+                    <h3>SELECT PLATFORM</h3>
+
+                    <button class="btn" id="btn-pc">PLAY ON PC</button>
+                    <button class="btn" id="btn-mobile">PLAY ON MOBILE</button>
+
+                    <p class="sub-text">
+                        PC: Mouse or Arrow Keys
+                    </p>
+                </div>
+
+                <!-- SETTINGS -->
+                <div class="settings-box">
+                    <h3>SETTINGS</h3>
+
+                    <div class="slider-row">
+                        <span>MUSIC</span>
+                        <input type="range" id="vol-music" min="0" max="1" step="0.05" value="0.5">
+                    </div>
+
+                    <div class="slider-row">
+                        <span>SFX</span>
+                        <input type="range" id="vol-sfx" min="0" max="1" step="0.05" value="0.5">
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- LEGEND -->
+            <div class="legend">
+                DROPS: [S] Slow | [🍄] Grow | [⭐] Multi | [💣] Damage
+            </div>
+
+        </div>
+
+        <!-- ================= HUD ================= -->
+        <div id="hud" class="hidden">
+
+            <div class="hud-top">
+                <span>HI-SCORE: <span id="ui-hiscore">0</span></span>
+                <span id="ui-timer" class="hidden">02:00</span>
+                <span>SCORE: <span id="ui-score">0</span></span>
+            </div>
+
+            <div class="hud-bottom">
+                <div class="hp-container">
+                    HP
+                    <div class="hp-bar-bg">
+                        <div id="hp-bar-fill"></div>
+                    </div>
+                    <span id="ui-hp">100/100</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ================= GAME CANVAS ================= -->
+        <canvas id="game-canvas" width="480" height="640"></canvas>
+
+        <!-- ================= DIALOGUE ================= -->
+        <div id="dialogue-box" class="hidden">
+
+            <div class="dialogue-inner">
+
+                <div id="portrait">💣</div>
+
+                <div class="text-area">
+                    <div id="speaker-name">BOMB</div>
+                    <div id="dialogue-text"></div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ================= FINAL CHOICE ================= -->
+        <div id="choice-screen" class="overlay hidden">
+
+            <h2 class="judgement">JUDGEMENT</h2>
+
+            <div class="choice-btns">
+                <button class="btn fight" id="btn-kill">[ FIGHT ]</button>
+                <button class="btn mercy" id="btn-spare">[ MERCY ]</button>
+            </div>
+
+        </div>
+
+        <!-- ================= MOBILE CONTROLS ================= -->
+        <div id="mobile-controls" class="hidden">
+            <div id="touch-track">
+                <div id="touch-hint">SLIDE TO MOVE</div>
+            </div>
+        </div>
+
     </div>
-  </div>
 
-  <div id="menu-screen" class="screen">
-    <div class="panel">
-      <h1>Main Menu</h1>
-      <p>Choose a mode</p>
+    <!-- SCRIPT -->
+    <script src="script.js"></script>
 
-      <button id="start-battle-btn">Start Battle</button>
-      <button id="start-boss-btn">Start Boss Battle</button>
-
-      <div class="sliders">
-        <label>
-          Music
-          <input id="vol-music" type="range" min="0" max="1" step="0.01" value="0.5" />
-        </label>
-
-        <label>
-          SFX
-          <input id="vol-sfx" type="range" min="0" max="1" step="0.01" value="0.5" />
-        </label>
-      </div>
-    </div>
-  </div>
-
-  <div id="battle-screen" class="screen">
-    <div class="hud">
-      <div class="stat">
-        <span>HP</span>
-        <div class="bar"><div id="hp-bar-fill" class="bar-fill"></div></div>
-        <div id="ui-hp" class="stat-text">100/100</div>
-      </div>
-
-      <div class="stat">
-        <span>Enemy HP</span>
-        <div class="bar"><div id="enemy-hp-bar-fill" class="bar-fill"></div></div>
-        <div id="enemy-hp" class="stat-text">100/100</div>
-      </div>
-    </div>
-
-    <div class="battle-area">
-      <div class="enemy">Enemy</div>
-
-      <div class="battle-buttons">
-        <button id="attack-btn">Attack</button>
-        <button id="back-to-menu-btn">Back to Menu</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="script.js"></script>
 </body>
+
 </html>

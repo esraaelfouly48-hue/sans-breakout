@@ -1,3 +1,6 @@
+// =======================
+// 🎵 AUDIO SYSTEM
+// =======================
 const AudioSys = {
     musicVol: 0.5,
     sfxVol: 0.5,
@@ -11,9 +14,11 @@ const AudioSys = {
     },
 
     init() {
+        // Do NOT autoplay here. Browser audio rules will block it.
         this.sounds.menu.loop = true;
         this.sounds.battle.loop = true;
         this.sounds.boss.loop = true;
+
         this.updateVolumes();
     },
 
@@ -37,14 +42,19 @@ const AudioSys = {
 
         const track = this.sounds[name];
         if (!track) {
-            console.warn(`Missing music: ${name}`);
+            console.warn(`Music track not found: ${name}`);
             return;
         }
 
         track.currentTime = 0;
-        track.play().catch(err => {
-            console.log('Audio error:', err);
-        });
+
+        track.play()
+            .then(() => {
+                console.log("Playing:", name);
+            })
+            .catch(err => {
+                console.log("Audio error:", err);
+            });
     },
 
     stopAllMusic() {
@@ -59,7 +69,7 @@ const AudioSys = {
     playSFX(name) {
         const sfx = this.sounds[name];
         if (!sfx) {
-            console.warn(`Missing sfx: ${name}`);
+            console.warn(`SFX not found: ${name}`);
             return;
         }
 
@@ -68,55 +78,62 @@ const AudioSys = {
     }
 };
 
+
+// =======================
+// 🎮 GAME
+// =======================
 const Game = {
     state: 'BOOT',
     hp: 100,
     maxHp: 100,
     enemyHp: 100,
     maxEnemyHp: 100,
-    battleTimer: null,
+    shake: 0,
     battleRunning: false,
+    battleTimer: null,
 
-    init() {
+    start() {
+        this.state = 'MENU';
         this.hp = this.maxHp;
         this.enemyHp = this.maxEnemyHp;
         this.updateUI();
-        this.showScreen('boot-screen');
-    },
-
-    showScreen(screenId) {
-        const screens = document.querySelectorAll('.screen');
-        screens.forEach(screen => {
-            if (screen.id === screenId) {
-                screen.classList.add('active');
-            } else {
-                screen.classList.remove('active');
-            }
-        });
     },
 
     updateUI() {
         const hpText = document.getElementById('ui-hp');
         const hpBar = document.getElementById('hp-bar-fill');
-        const enemyHpText = document.getElementById('enemy-hp');
-        const enemyHpBar = document.getElementById('enemy-hp-bar-fill');
 
         if (hpText) {
             hpText.innerText = `${Math.ceil(this.hp)}/${this.maxHp}`;
         }
 
         if (hpBar) {
-            const hpPercent = Math.max(0, (this.hp / this.maxHp) * 100);
-            hpBar.style.width = `${hpPercent}%`;
+            hpBar.style.width = `${(this.hp / this.maxHp) * 100}%`;
         }
+
+        const enemyHpText = document.getElementById('enemy-hp');
+        const enemyHpBar = document.getElementById('enemy-hp-bar-fill');
 
         if (enemyHpText) {
             enemyHpText.innerText = `${Math.ceil(this.enemyHp)}/${this.maxEnemyHp}`;
         }
 
         if (enemyHpBar) {
-            const enemyPercent = Math.max(0, (this.enemyHp / this.maxEnemyHp) * 100);
-            enemyHpBar.style.width = `${enemyPercent}%`;
+            enemyHpBar.style.width = `${(this.enemyHp / this.maxEnemyHp) * 100}%`;
+        }
+    },
+
+    showScreen(screenId) {
+        const screens = ['boot-screen', 'menu-screen', 'battle-screen'];
+
+        for (const id of screens) {
+            const el = document.getElementById(id);
+            if (!el) continue;
+            if (id === screenId) {
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active');
+            }
         }
     },
 
@@ -124,9 +141,7 @@ const Game = {
         this.state = 'MENU';
         this.battleRunning = false;
         this.clearBattleTimer();
-        this.hp = this.maxHp;
-        this.enemyHp = this.maxEnemyHp;
-        this.updateUI();
+
         this.showScreen('menu-screen');
         AudioSys.playMusic('menu');
     },
@@ -134,22 +149,28 @@ const Game = {
     startBattle() {
         this.state = 'BATTLE';
         this.battleRunning = true;
+
         this.hp = this.maxHp;
         this.enemyHp = this.maxEnemyHp;
         this.updateUI();
+
         this.showScreen('battle-screen');
         AudioSys.playMusic('battle');
+
         this.startEnemyLoop();
     },
 
     startBossBattle() {
         this.state = 'BOSS';
         this.battleRunning = true;
+
         this.hp = this.maxHp;
         this.enemyHp = this.maxEnemyHp;
         this.updateUI();
+
         this.showScreen('battle-screen');
         AudioSys.playMusic('boss');
+
         this.startEnemyLoop();
     },
 
@@ -166,6 +187,7 @@ const Game = {
         this.battleTimer = setInterval(() => {
             if (!this.battleRunning) return;
             if (this.state !== 'BATTLE' && this.state !== 'BOSS') return;
+
             this.enemyAttack();
         }, 1800);
     },
@@ -186,17 +208,22 @@ const Game = {
 
     enemyAttack() {
         const damage = this.state === 'BOSS' ? 15 : 8;
+
         AudioSys.playSFX('blast');
         this.takeDamage(damage);
     },
 
-    takeDamage(damage) {
-        this.hp -= damage;
+    takeDamage(d) {
+        this.hp -= d;
+        this.shake = 12;
+
         if (this.hp < 0) this.hp = 0;
 
         this.updateUI();
 
         if (this.hp <= 0) {
+            this.hp = 0;
+            this.updateUI();
             this.loseBattle();
         }
     },
@@ -205,7 +232,8 @@ const Game = {
         this.battleRunning = false;
         this.clearBattleTimer();
         AudioSys.stopAllMusic();
-        alert('You won!');
+
+        alert('You won the battle!');
         this.startMenu();
     },
 
@@ -213,11 +241,24 @@ const Game = {
         this.battleRunning = false;
         this.clearBattleTimer();
         AudioSys.stopAllMusic();
+
         alert('Game Over');
         location.reload();
+    },
+
+    resetGame() {
+        this.battleRunning = false;
+        this.clearBattleTimer();
+        this.hp = this.maxHp;
+        this.enemyHp = this.maxEnemyHp;
+        this.updateUI();
     }
 };
 
+
+// =======================
+// 🔘 BOOT / INIT
+// =======================
 document.addEventListener('DOMContentLoaded', () => {
     const bootScreen = document.getElementById('boot-screen');
     const startBattleBtn = document.getElementById('start-battle-btn');
@@ -228,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sfxSlider = document.getElementById('vol-sfx');
 
     if (bootScreen) {
-        bootScreen.addEventListener('pointerup', () => {
+        bootScreen.onclick = () => {
             AudioSys.init();
 
             const boot = document.getElementById('boot-screen');
@@ -237,37 +278,34 @@ document.addEventListener('DOMContentLoaded', () => {
             if (boot) boot.classList.remove('active');
             if (menu) menu.classList.add('active');
 
-            Game.state = 'MENU';
-            Game.hp = Game.maxHp;
-            Game.enemyHp = Game.maxEnemyHp;
-            Game.updateUI();
-
             AudioSys.playMusic('menu');
-        });
+            Game.state = 'MENU';
+            Game.start();
+        };
     }
 
     if (startBattleBtn) {
-        startBattleBtn.addEventListener('click', () => {
+        startBattleBtn.onclick = () => {
             Game.startBattle();
-        });
+        };
     }
 
     if (startBossBtn) {
-        startBossBtn.addEventListener('click', () => {
+        startBossBtn.onclick = () => {
             Game.startBossBattle();
-        });
+        };
     }
 
     if (attackBtn) {
-        attackBtn.addEventListener('click', () => {
+        attackBtn.onclick = () => {
             Game.attackEnemy(10);
-        });
+        };
     }
 
     if (backToMenuBtn) {
-        backToMenuBtn.addEventListener('click', () => {
+        backToMenuBtn.onclick = () => {
             Game.startMenu();
-        });
+        };
     }
 
     if (musicSlider) {
@@ -282,14 +320,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    Game.init();
+    Game.updateUI();
 });
 
+
+// =======================
+// ⌨️ OPTIONAL KEY CONTROLS
+// =======================
 document.addEventListener('keydown', (e) => {
     if (Game.state !== 'BATTLE' && Game.state !== 'BOSS') return;
 
     if (e.key === ' ' || e.key === 'Enter') {
-        e.preventDefault();
         Game.attackEnemy(10);
     }
 });
