@@ -1,12 +1,6 @@
-const canvas = document.getElementById('game-canvas');
-const ctx = canvas.getContext('2d');
-
-const GAME_WIDTH = canvas.width;
-const GAME_HEIGHT = canvas.height;
-
-const EFFECT_DURATION = 5000;
-
-/* ================= AUDIO ================= */
+// =======================
+// 🎵 AUDIO SYSTEM
+// =======================
 const AudioSys = {
     musicVol: 0.5,
     sfxVol: 0.5,
@@ -20,365 +14,323 @@ const AudioSys = {
     },
 
     init() {
-        Object.values(this.sounds).forEach(s => {
-            s.volume = 0;
-            s.play().then(() => s.pause()).catch(() => {});
-        });
-
+        // Do NOT autoplay here. Browser audio rules will block it.
         this.sounds.menu.loop = true;
         this.sounds.battle.loop = true;
         this.sounds.boss.loop = true;
-        this.sounds.talk.loop = true;
 
         this.updateVolumes();
     },
 
     updateVolumes() {
-        this.musicVol = document.getElementById('vol-music').value;
-        this.sfxVol = document.getElementById('vol-sfx').value;
+        const musicSlider = document.getElementById('vol-music');
+        const sfxSlider = document.getElementById('vol-sfx');
+
+        if (musicSlider) this.musicVol = Number(musicSlider.value);
+        if (sfxSlider) this.sfxVol = Number(sfxSlider.value);
 
         this.sounds.menu.volume = this.musicVol;
         this.sounds.battle.volume = this.musicVol;
         this.sounds.boss.volume = this.musicVol;
+
         this.sounds.talk.volume = this.sfxVol;
         this.sounds.blast.volume = this.sfxVol;
     },
 
-    playMusic(track) {
+    playMusic(name) {
         this.stopAllMusic();
-        const t = this.sounds[track];
-        t.currentTime = 0;
-        t.volume = this.musicVol;
-        t.play().catch(() => {});
+
+        const track = this.sounds[name];
+        if (!track) {
+            console.warn(`Music track not found: ${name}`);
+            return;
+        }
+
+        track.currentTime = 0;
+
+        track.play()
+            .then(() => {
+                console.log("Playing:", name);
+            })
+            .catch(err => {
+                console.log("Audio error:", err);
+            });
     },
 
     stopAllMusic() {
-        ['menu', 'battle', 'boss'].forEach(t => this.sounds[t].pause());
+        ['menu', 'battle', 'boss'].forEach(name => {
+            const track = this.sounds[name];
+            if (!track) return;
+            track.pause();
+            track.currentTime = 0;
+        });
     },
 
-    playSFX(track) {
-        const t = this.sounds[track];
-        t.currentTime = 0;
-        t.volume = this.sfxVol;
-        t.play().catch(() => {});
-    },
-
-    playTalkLoop() {
-        const t = this.sounds.talk;
-        if (t.paused) {
-            t.currentTime = 0;
-            t.volume = this.sfxVol;
-            t.play().catch(() => {});
+    playSFX(name) {
+        const sfx = this.sounds[name];
+        if (!sfx) {
+            console.warn(`SFX not found: ${name}`);
+            return;
         }
-    },
 
-    stopTalkLoop() {
-        const t = this.sounds.talk;
-        t.pause();
-        t.currentTime = 0;
+        sfx.currentTime = 0;
+        sfx.play().catch(() => {});
     }
 };
 
-/* ================= INPUT ================= */
-const Input = {
-    mouseX: GAME_WIDTH / 2,
-    keys: {},
-    platform: 'pc',
 
-    init(platform) {
-        this.platform = platform;
-
-        window.addEventListener('keydown', e => this.keys[e.key] = true);
-        window.addEventListener('keyup', e => this.keys[e.key] = false);
-
-        if (platform === 'pc') {
-            canvas.addEventListener('mousemove', e => {
-                const rect = canvas.getBoundingClientRect();
-                this.mouseX = (e.clientX - rect.left) * (GAME_WIDTH / rect.width);
-            });
-        } else {
-            const track = document.getElementById('touch-track');
-
-            const move = (x) => {
-                const rect = track.getBoundingClientRect();
-                let pct = Math.max(0, Math.min(1, (x - rect.left) / rect.width));
-                this.mouseX = pct * GAME_WIDTH;
-            };
-
-            track.addEventListener('touchstart', e => {
-                e.preventDefault();
-                move(e.touches[0].clientX);
-            }, { passive: false });
-
-            track.addEventListener('touchmove', e => {
-                e.preventDefault();
-                move(e.touches[0].clientX);
-            }, { passive: false });
-        }
-    }
-};
-
-/* ================= ENTITIES ================= */
-class Paddle {
-    constructor() {
-        this.w = 80;
-        this.h = 15;
-        this.x = GAME_WIDTH / 2 - 40;
-        this.y = GAME_HEIGHT - 60;
-        this.speed = 8;
-    }
-
-    update() {
-        if (Input.platform === 'pc' && Input.keys['ArrowLeft']) this.x -= this.speed;
-        else if (Input.platform === 'pc' && Input.keys['ArrowRight']) this.x += this.speed;
-        else this.x += (Input.mouseX - this.w / 2 - this.x) * 0.3;
-
-        this.x = Math.max(0, Math.min(GAME_WIDTH - this.w, this.x));
-    }
-
-    draw() {
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(this.x, this.y, this.w, this.h);
-    }
-}
-
-class Ball {
-    constructor(x, y, dx, dy) {
-        this.x = x;
-        this.y = y;
-        this.r = 6;
-        this.dx = dx;
-        this.dy = dy;
-    }
-
-    update(paddle) {
-        this.x += this.dx;
-        this.y += this.dy;
-
-        if (this.x < this.r || this.x > GAME_WIDTH - this.r) this.dx *= -1;
-        if (this.y < this.r) this.dy *= -1;
-
-        if (
-            this.y + this.r > paddle.y &&
-            this.x > paddle.x &&
-            this.x < paddle.x + paddle.w &&
-            this.dy > 0
-        ) {
-            this.dy *= -1;
-            let hit = (this.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
-            this.dx = hit * 5;
-        }
-    }
-
-    draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-        ctx.fillStyle = '#fff';
-        ctx.fill();
-    }
-}
-
-class Brick {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.w = 60;
-        this.h = 20;
-        this.active = true;
-    }
-
-    draw() {
-        if (!this.active) return;
-        ctx.fillStyle = '#aaa';
-        ctx.fillRect(this.x, this.y, this.w, this.h);
-    }
-}
-
-class Blaster {
-    constructor() {
-        this.x = Math.random() * (GAME_WIDTH - 90);
-        this.w = 90;
-        this.state = 'warn';
-        this.timer = 75;
-        this.hit = false;
-    }
-
-    update(paddle) {
-        this.timer--;
-
-        if (this.timer === 50) {
-            this.state = 'charge';
-            AudioSys.playSFX('blast');
-        }
-
-        if (this.timer === 35) this.state = 'fire';
-        if (this.timer <= 0) return true;
-
-        if (this.state === 'fire' && !this.hit) {
-            let beamX = this.x + 25;
-            let beamW = this.w - 50;
-
-            if (paddle.x < beamX + beamW && paddle.x + paddle.w > beamX) {
-                this.hit = true;
-                Game.takeDamage(0.1);
-            }
-        }
-
-        return false;
-    }
-
-    draw() {
-        if (this.state === 'warn') {
-            ctx.fillStyle = 'rgba(255,0,0,0.1)';
-            ctx.fillRect(this.x, 0, this.w, GAME_HEIGHT);
-        }
-        if (this.state === 'charge') {
-            ctx.fillStyle = 'rgba(255,255,255,0.3)';
-            ctx.fillRect(this.x + 40, 0, 10, GAME_HEIGHT);
-        }
-        if (this.state === 'fire') {
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(this.x + 40, 0, 10, GAME_HEIGHT);
-        }
-    }
-}
-
-/* ================= GAME ================= */
+// =======================
+// 🎮 GAME
+// =======================
 const Game = {
     state: 'BOOT',
-    maxHp: 100,
     hp: 100,
-    score: 0,
-    timer: 120,
+    maxHp: 100,
+    enemyHp: 100,
+    maxEnemyHp: 100,
     shake: 0,
+    battleRunning: false,
+    battleTimer: null,
 
-    paddle: null,
-    balls: [],
-    bricks: [],
-    blasters: [],
-
-    init() {
-        document.getElementById('boot-screen').onclick = () => {
-            AudioSys.init();
-            document.getElementById('boot-screen').classList.remove('active');
-            document.getElementById('menu-screen').classList.add('active');
-            AudioSys.playMusic('menu');
-            this.state = 'MENU';
-        };
-
-        document.getElementById('btn-pc').onclick = () => this.start('pc');
-        document.getElementById('btn-mobile').onclick = () => this.start('mobile');
-
-        requestAnimationFrame(() => this.loop());
+    start() {
+        this.state = 'MENU';
+        this.hp = this.maxHp;
+        this.enemyHp = this.maxEnemyHp;
+        this.updateUI();
     },
 
-    start(platform) {
-        Input.init(platform);
+    updateUI() {
+        const hpText = document.getElementById('ui-hp');
+        const hpBar = document.getElementById('hp-bar-fill');
 
-        document.getElementById('menu-screen').classList.remove('active');
-        document.getElementById('hud').classList.remove('hidden');
-
-        if (platform === 'mobile') {
-            document.getElementById('mobile-controls').classList.remove('hidden');
+        if (hpText) {
+            hpText.innerText = `${Math.ceil(this.hp)}/${this.maxHp}`;
         }
 
-        this.hp = this.maxHp;
-        this.score = 0;
+        if (hpBar) {
+            hpBar.style.width = `${(this.hp / this.maxHp) * 100}%`;
+        }
 
-        this.paddle = new Paddle();
-        this.balls = [new Ball(240, 300, 4, -4)];
-        this.generateBricks();
+        const enemyHpText = document.getElementById('enemy-hp');
+        const enemyHpBar = document.getElementById('enemy-hp-bar-fill');
 
-        this.state = 'PLAY';
-        AudioSys.playMusic('battle');
+        if (enemyHpText) {
+            enemyHpText.innerText = `${Math.ceil(this.enemyHp)}/${this.maxEnemyHp}`;
+        }
+
+        if (enemyHpBar) {
+            enemyHpBar.style.width = `${(this.enemyHp / this.maxEnemyHp) * 100}%`;
+        }
     },
 
-    generateBricks() {
-        this.bricks = [];
-        for (let r = 0; r < 5; r++) {
-            for (let c = 0; c < 7; c++) {
-                this.bricks.push(new Brick(15 + c * 70, 60 + r * 30));
+    showScreen(screenId) {
+        const screens = ['boot-screen', 'menu-screen', 'battle-screen'];
+
+        for (const id of screens) {
+            const el = document.getElementById(id);
+            if (!el) continue;
+            if (id === screenId) {
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active');
             }
         }
+    },
+
+    startMenu() {
+        this.state = 'MENU';
+        this.battleRunning = false;
+        this.clearBattleTimer();
+
+        this.showScreen('menu-screen');
+        AudioSys.playMusic('menu');
+    },
+
+    startBattle() {
+        this.state = 'BATTLE';
+        this.battleRunning = true;
+
+        this.hp = this.maxHp;
+        this.enemyHp = this.maxEnemyHp;
+        this.updateUI();
+
+        this.showScreen('battle-screen');
+        AudioSys.playMusic('battle');
+
+        this.startEnemyLoop();
+    },
+
+    startBossBattle() {
+        this.state = 'BOSS';
+        this.battleRunning = true;
+
+        this.hp = this.maxHp;
+        this.enemyHp = this.maxEnemyHp;
+        this.updateUI();
+
+        this.showScreen('battle-screen');
+        AudioSys.playMusic('boss');
+
+        this.startEnemyLoop();
+    },
+
+    clearBattleTimer() {
+        if (this.battleTimer) {
+            clearInterval(this.battleTimer);
+            this.battleTimer = null;
+        }
+    },
+
+    startEnemyLoop() {
+        this.clearBattleTimer();
+
+        this.battleTimer = setInterval(() => {
+            if (!this.battleRunning) return;
+            if (this.state !== 'BATTLE' && this.state !== 'BOSS') return;
+
+            this.enemyAttack();
+        }, 1800);
+    },
+
+    attackEnemy(amount = 10) {
+        if (!this.battleRunning) return;
+
+        this.enemyHp -= amount;
+        if (this.enemyHp < 0) this.enemyHp = 0;
+
+        AudioSys.playSFX('talk');
+        this.updateUI();
+
+        if (this.enemyHp <= 0) {
+            this.winBattle();
+        }
+    },
+
+    enemyAttack() {
+        const damage = this.state === 'BOSS' ? 15 : 8;
+
+        AudioSys.playSFX('blast');
+        this.takeDamage(damage);
     },
 
     takeDamage(d) {
         this.hp -= d;
         this.shake = 12;
 
-        if (this.hp <= 0) location.reload();
+        if (this.hp < 0) this.hp = 0;
+
+        this.updateUI();
+
+        if (this.hp <= 0) {
+            this.hp = 0;
+            this.updateUI();
+            this.loseBattle();
+        }
     },
 
-    loop() {
-        requestAnimationFrame(() => this.loop());
+    winBattle() {
+        this.battleRunning = false;
+        this.clearBattleTimer();
+        AudioSys.stopAllMusic();
 
-        if (this.state === 'MENU' || this.state === 'BOOT') return;
+        alert('You won the battle!');
+        this.startMenu();
+    },
 
-        ctx.save();
+    loseBattle() {
+        this.battleRunning = false;
+        this.clearBattleTimer();
+        AudioSys.stopAllMusic();
 
-        /* SCREEN SHAKE */
-        if (this.shake > 0) {
-            const dx = (Math.random() - 0.5) * this.shake;
-            const dy = (Math.random() - 0.5) * this.shake;
-            ctx.translate(dx, dy);
-            this.shake *= 0.85;
-        }
+        alert('Game Over');
+        location.reload();
+    },
 
-        ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-
-        this.paddle.update();
-        this.paddle.draw();
-
-        /* BALLS */
-        for (let i = this.balls.length - 1; i >= 0; i--) {
-            let b = this.balls[i];
-            b.update(this.paddle);
-            b.draw();
-
-            for (let br of this.bricks) {
-                if (
-                    br.active &&
-                    b.x + b.r > br.x &&
-                    b.x - b.r < br.x + br.w &&
-                    b.y + b.r > br.y &&
-                    b.y - b.r < br.y + br.h
-                ) {
-                    br.active = false;
-                    b.dy *= -1;
-                    this.score += 10;
-                }
-            }
-
-            /* FALL DAMAGE */
-            if (b.y - b.r > GAME_HEIGHT) {
-                this.balls.splice(i, 1);
-                this.takeDamage(5);
-
-                if (this.balls.length === 0 && this.hp > 0) {
-                    this.balls.push(new Ball(GAME_WIDTH / 2, GAME_HEIGHT / 2, 4, -4));
-                }
-            }
-        }
-
-        this.bricks.forEach(b => b.draw());
-
-        /* BOSS */
-        if (this.state === 'BOSS') {
-            if (Math.random() < 0.02) {
-                this.blasters.push(new Blaster());
-            }
-
-            for (let i = this.blasters.length - 1; i >= 0; i--) {
-                if (this.blasters[i].update(this.paddle)) {
-                    this.blasters.splice(i, 1);
-                } else {
-                    this.blasters[i].draw();
-                }
-            }
-        }
-
-        ctx.restore();
+    resetGame() {
+        this.battleRunning = false;
+        this.clearBattleTimer();
+        this.hp = this.maxHp;
+        this.enemyHp = this.maxEnemyHp;
+        this.updateUI();
     }
 };
 
-window.onload = () => Game.init();
+
+// =======================
+// 🔘 BOOT / INIT
+// =======================
+document.addEventListener('DOMContentLoaded', () => {
+    const bootScreen = document.getElementById('boot-screen');
+    const startBattleBtn = document.getElementById('start-battle-btn');
+    const startBossBtn = document.getElementById('start-boss-btn');
+    const attackBtn = document.getElementById('attack-btn');
+    const backToMenuBtn = document.getElementById('back-to-menu-btn');
+    const musicSlider = document.getElementById('vol-music');
+    const sfxSlider = document.getElementById('vol-sfx');
+
+    if (bootScreen) {
+        bootScreen.onclick = () => {
+            AudioSys.init();
+
+            const boot = document.getElementById('boot-screen');
+            const menu = document.getElementById('menu-screen');
+
+            if (boot) boot.classList.remove('active');
+            if (menu) menu.classList.add('active');
+
+            AudioSys.playMusic('menu');
+            Game.state = 'MENU';
+            Game.start();
+        };
+    }
+
+    if (startBattleBtn) {
+        startBattleBtn.onclick = () => {
+            Game.startBattle();
+        };
+    }
+
+    if (startBossBtn) {
+        startBossBtn.onclick = () => {
+            Game.startBossBattle();
+        };
+    }
+
+    if (attackBtn) {
+        attackBtn.onclick = () => {
+            Game.attackEnemy(10);
+        };
+    }
+
+    if (backToMenuBtn) {
+        backToMenuBtn.onclick = () => {
+            Game.startMenu();
+        };
+    }
+
+    if (musicSlider) {
+        musicSlider.addEventListener('input', () => {
+            AudioSys.updateVolumes();
+        });
+    }
+
+    if (sfxSlider) {
+        sfxSlider.addEventListener('input', () => {
+            AudioSys.updateVolumes();
+        });
+    }
+
+    Game.updateUI();
+});
+
+
+// =======================
+// ⌨️ OPTIONAL KEY CONTROLS
+// =======================
+document.addEventListener('keydown', (e) => {
+    if (Game.state !== 'BATTLE' && Game.state !== 'BOSS') return;
+
+    if (e.key === ' ' || e.key === 'Enter') {
+        Game.attackEnemy(10);
+    }
+});
