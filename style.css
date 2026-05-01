@@ -1,17 +1,8 @@
-/* =========================
-   RESET & BASE
-========================= */
-*,
-*::before,
-*::after {
+/* ================= RESET & BASE ================= */
+* {
     box-sizing: border-box;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-}
-
-html, body {
-    width: 100%;
-    height: 100%;
 }
 
 body {
@@ -23,37 +14,34 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    height: 100vh;
     overflow: hidden;
 }
 
-/* =========================
-   CRT EFFECT
-========================= */
+/* ================= CRT SCANLINE EFFECT ================= */
 #crt-overlay {
     position: fixed;
     inset: 0;
     background:
-        linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
-        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%),
+        linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06));
     background-size: 100% 2px, 3px 100%;
     z-index: 100;
     pointer-events: none;
     opacity: 0.9;
 }
 
-/* =========================
-   GAME CONTAINER
-========================= */
+/* ================= MAIN CONTAINER ================= */
 #game-container {
     position: relative;
-    width: min(480px, 100vw);
-    height: min(640px, 100vh);
+    width: 480px;
+    height: 640px;
     background: #000;
     border: 4px solid #fff;
     overflow: hidden;
     box-shadow:
-        0 0 0 2px rgba(255, 255, 255, 0.1),
-        0 0 20px rgba(255, 255, 255, 0.15);
+        0 0 20px rgba(255,255,255,0.2),
+        inset 0 0 10px rgba(255,255,255,0.05);
 }
 
 canvas {
@@ -62,9 +50,7 @@ canvas {
     height: 100%;
 }
 
-/* =========================
-   OVERLAYS
-========================= */
+/* ================= OVERLAYS ================= */
 .overlay {
     position: absolute;
     inset: 0;
@@ -74,7 +60,7 @@ canvas {
     justify-content: center;
     align-items: center;
     z-index: 50;
-    padding: 24px;
+    padding: 20px;
     text-align: center;
 }
 
@@ -86,61 +72,42 @@ canvas {
     display: none !important;
 }
 
-/* =========================
-   TYPOGRAPHY
-========================= */
+/* ================= TYPOGRAPHY ================= */
 h1.title {
-    font-size: clamp(24px, 6vw, 34px);
+    font-size: 32px;
     letter-spacing: 2px;
     text-shadow: 2px 2px #ff0000;
-    margin: 0 0 34px;
+    margin-bottom: 40px;
     animation: pulse 2s infinite;
-    line-height: 1.2;
-}
-
-h2 {
-    font-size: clamp(16px, 4vw, 22px);
-    margin: 0 0 12px;
-    line-height: 1.4;
-}
-
-h3 {
-    color: #888;
-    font-size: 12px;
-    margin: 0 0 14px;
-    line-height: 1.4;
+    line-height: 1.3;
 }
 
 @keyframes pulse {
-    0%   { opacity: 1; transform: scale(1); }
-    50%  { opacity: 0.84; transform: scale(0.99); }
-    100% { opacity: 1; transform: scale(1); }
+    0% { opacity: 1; }
+    50% { opacity: 0.8; }
+    100% { opacity: 1; }
 }
 
-/* =========================
-   BUTTONS
-========================= */
+/* ================= BUTTONS ================= */
 .btn {
     font-family: 'Press Start 2P', cursive;
     background: #000;
     color: #fff;
     border: 2px solid #fff;
-    padding: 14px 16px;
-    font-size: 12px;
-    margin: 8px;
+    padding: 14px;
+    font-size: 13px;
+    margin: 10px;
     cursor: pointer;
-    transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-    box-shadow: 0 0 0 rgba(255,255,255,0);
+    transition: 0.2s;
 }
 
 .btn:hover {
     background: #fff;
     color: #000;
-    transform: translateY(-1px);
 }
 
 .btn:active {
-    transform: translateY(1px) scale(0.99);
+    transform: scale(0.97);
 }
 
 .btn.fight {
@@ -163,41 +130,38 @@ h3 {
     color: #000;
 }
 
-/* =========================
-   MENU LAYOUT
-========================= */
+/* ================= MENUS ================= */
 .menu-layout {
     display: flex;
     flex-direction: column;
     width: 100%;
-    gap: 20px;
-    margin-bottom: 28px;
+    gap: 24px;
+    margin-bottom: 35px;
 }
 
 .controls-box,
 .settings-box {
     border: 2px dashed #555;
-    padding: 18px 16px;
-    background: rgba(255,255,255,0.02);
+    padding: 18px;
+}
+
+.controls-box h3,
+.settings-box h3 {
+    color: #888;
+    font-size: 12px;
+    margin: 0 0 12px;
 }
 
 .slider-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     font-size: 11px;
 }
 
-.slider-row span {
-    min-width: 44px;
-    color: #ddd;
-}
-
-/* Range inputs still okay for menu volume */
 input[type=range] {
-    width: 72%;
+    width: 70%;
     cursor: pointer;
     accent-color: #fff;
 }
@@ -205,22 +169,19 @@ input[type=range] {
 .sub-text {
     font-size: 10px;
     color: #888;
-    margin: 10px 0 0;
-    line-height: 1.6;
+    margin-top: 10px;
 }
 
 .legend {
     font-size: 10px;
     color: #aaa;
-    line-height: 1.8;
+    line-height: 1.6;
     border-top: 2px solid #333;
-    padding-top: 12px;
+    padding-top: 10px;
     width: 100%;
 }
 
-/* =========================
-   HUD
-========================= */
+/* ================= HUD ================= */
 #hud {
     position: absolute;
     inset: 0;
@@ -229,16 +190,13 @@ input[type=range] {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 14px;
+    padding: 15px;
 }
 
 .hud-top {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    gap: 10px;
     font-size: 11px;
-    line-height: 1.4;
 }
 
 .hud-bottom {
@@ -249,61 +207,52 @@ input[type=range] {
 .hp-container {
     display: flex;
     align-items: center;
+    font-size: 13px;
     gap: 10px;
-    font-size: 12px;
     font-weight: bold;
-    line-height: 1.4;
-    flex-wrap: wrap;
 }
 
 .hp-bar-bg {
-    width: 120px;
+    width: 100px;
     height: 14px;
     background: #880000;
     border: 1px solid #fff;
-    position: relative;
-    overflow: hidden;
 }
 
 #hp-bar-fill {
     width: 100%;
     height: 100%;
     background: #ffff00;
-    transition: width 0.2s ease;
+    transition: width 0.2s;
 }
 
-/* =========================
-   DIALOGUE BOX
-========================= */
+/* ================= DIALOGUE BOX ================= */
 #dialogue-box {
     position: absolute;
-    left: 4%;
-    right: 4%;
-    bottom: 78px;
-    height: auto;
+    bottom: 80px;
+    left: 5%;
+    width: 90%;
     min-height: 120px;
     background: #000;
     border: 4px solid #fff;
     z-index: 40;
-    padding: 14px;
+    padding: 15px;
 }
 
 .dialogue-inner {
     display: flex;
+    align-items: flex-start;
     height: 100%;
-    align-items: stretch;
-    gap: 14px;
 }
 
 #portrait {
-    font-size: 44px;
-    width: 64px;
+    font-size: 50px;
+    margin-right: 20px;
+    border-right: 2px solid #fff;
+    padding-right: 20px;
+    height: 100%;
     display: flex;
     align-items: center;
-    justify-content: center;
-    border-right: 2px solid #fff;
-    padding-right: 14px;
-    flex-shrink: 0;
 }
 
 .text-area {
@@ -316,117 +265,43 @@ input[type=range] {
 
 #speaker-name {
     color: #ff0000;
-    font-size: 12px;
-    line-height: 1.4;
+    font-size: 13px;
 }
 
 #dialogue-text {
-    font-size: 12px;
-    line-height: 1.7;
+    font-size: 13px;
+    line-height: 1.6;
+
+    /* FIX YOUR BUG */
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     word-break: break-word;
 }
 
-/* =========================
-   MOBILE CONTROLS
-========================= */
+/* ================= MOBILE CONTROLS ================= */
 #mobile-controls {
     position: absolute;
-    left: 0;
     bottom: 0;
+    left: 0;
     width: 100%;
-    height: 96px;
+    height: 100px;
     background: #111;
     border-top: 2px solid #fff;
     z-index: 20;
-    padding: 14px 16px;
+    padding: 0 20px;
     display: flex;
     align-items: center;
     touch-action: none;
 }
 
-#touch-track {
-    width: 100%;
-    height: 58px;
-    background: #222;
-    border: 2px solid #fff;
-    border-radius: 10px;
+/* You can still hide the old slider visually but keep structure */
+.slider-track {
     position: relative;
-    overflow: hidden;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    width: 100%;
+    height: 100%;
+    background: transparent; /* makes it feel like free movement */
 }
 
-#touch-hint {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    color: #666;
-    pointer-events: none;
-    letter-spacing: 1px;
-}
-
-/* Optional: useful if you later add a thumb again */
 .slider-thumb {
-    display: none;
-}
-
-/* =========================
-   RESPONSIVE
-========================= */
-@media (max-width: 520px) {
-    #game-container {
-        width: 100vw;
-        height: 100vh;
-        border-width: 0;
-    }
-
-    #hud {
-        padding: 12px;
-    }
-
-    .hud-top {
-        font-size: 10px;
-    }
-
-    .hp-container {
-        font-size: 11px;
-    }
-
-    .hp-bar-bg {
-        width: 100px;
-        height: 12px;
-    }
-
-    #dialogue-box {
-        left: 3%;
-        right: 3%;
-        bottom: 92px;
-        padding: 12px;
-        min-height: 112px;
-    }
-
-    #portrait {
-        font-size: 38px;
-        width: 56px;
-        padding-right: 12px;
-    }
-
-    #dialogue-text,
-    #speaker-name {
-        font-size: 11px;
-    }
-
-    .btn {
-        font-size: 11px;
-        padding: 12px 14px;
-    }
-
-    .legend,
-    .sub-text {
-        font-size: 9px;
-    }
+    display: none; /* remove ugly knob */
 }
