@@ -48,6 +48,7 @@ canvas {
     display: block;
     width: 100%;
     height: 100%;
+    background: radial-gradient(circle at center, #111 0%, #000 70%);
 }
 
 /* ================= OVERLAYS ================= */
@@ -152,12 +153,20 @@ h1.title {
     margin: 0 0 12px;
 }
 
+.menu-actions {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .slider-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 10px;
     font-size: 11px;
+    gap: 10px;
 }
 
 input[type=range] {
@@ -197,6 +206,7 @@ input[type=range] {
     display: flex;
     justify-content: space-between;
     font-size: 11px;
+    gap: 8px;
 }
 
 .hud-bottom {
@@ -210,6 +220,7 @@ input[type=range] {
     font-size: 13px;
     gap: 10px;
     font-weight: bold;
+    flex-wrap: wrap;
 }
 
 .hp-bar-bg {
@@ -217,13 +228,81 @@ input[type=range] {
     height: 14px;
     background: #880000;
     border: 1px solid #fff;
+    overflow: hidden;
 }
 
-#hp-bar-fill {
+#hp-bar-fill,
+#enemy-hp-bar-fill {
     width: 100%;
     height: 100%;
     background: #ffff00;
     transition: width 0.2s;
+}
+
+.enemy-bar {
+    width: 160px;
+    margin-top: 8px;
+}
+
+/* ================= BATTLE SCREEN ================= */
+#battle-screen {
+    background: rgba(0, 0, 0, 0.82);
+    justify-content: space-between;
+    padding: 18px;
+    pointer-events: auto;
+}
+
+.battle-top {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 18px;
+}
+
+.enemy-card {
+    width: 100%;
+    max-width: 360px;
+    border: 2px solid #fff;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.65);
+}
+
+.enemy-name {
+    font-size: 15px;
+    color: #ff5555;
+    margin-bottom: 8px;
+}
+
+.enemy-hp-text {
+    font-size: 11px;
+    margin-bottom: 8px;
+    color: #ddd;
+}
+
+.battle-center {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.battle-info {
+    border: 2px dashed #555;
+    padding: 14px;
+    width: 100%;
+    max-width: 360px;
+    font-size: 11px;
+    line-height: 1.8;
+    color: #ccc;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.battle-actions {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
 }
 
 /* ================= DIALOGUE BOX ================= */
@@ -271,11 +350,35 @@ input[type=range] {
 #dialogue-text {
     font-size: 13px;
     line-height: 1.6;
-
-    /* FIX YOUR BUG */
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     word-break: break-word;
+}
+
+/* ================= CHOICE SCREEN ================= */
+#choice-screen {
+    background: rgba(0, 0, 0, 0.92);
+}
+
+.judgement {
+    font-size: 24px;
+    color: #fff;
+    margin-bottom: 12px;
+    text-shadow: 2px 2px #ff0000;
+}
+
+.choice-text {
+    font-size: 11px;
+    color: #aaa;
+    margin-bottom: 24px;
+    line-height: 1.8;
+}
+
+.choice-btns {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 /* ================= MOBILE CONTROLS ================= */
@@ -294,14 +397,17 @@ input[type=range] {
     touch-action: none;
 }
 
-/* You can still hide the old slider visually but keep structure */
-.slider-track {
+#touch-track {
     position: relative;
     width: 100%;
-    height: 100%;
-    background: transparent; /* makes it feel like free movement */
+    height: 70px;
+    border: 2px dashed #555;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.slider-thumb {
-    display: none; /* remove ugly knob  i guess*/
+#touch-hint {
+    font-size: 10px;
+    color: #aaa;
 }
