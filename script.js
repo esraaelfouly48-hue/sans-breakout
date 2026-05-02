@@ -106,6 +106,8 @@ const Game = {
 
   wave: 1,
   round: 1,
+  bossIndex: 0,
+  currentBossLabel: 'BOMB',
 
   paddle: {
     x: W / 2 - 55,
@@ -132,7 +134,10 @@ const Game = {
 
   keys: { left: false, right: false },
   mouseX: W / 2,
-  mobileTouchActive: false,
+
+  touchingPaddle: false,
+  paddleTouchOffset: 0,
+  paddleGlowUntil: 0,
 
   bossTimer: 120000,
   bossNextBlasterAt: 0,
@@ -142,9 +147,11 @@ const Game = {
 
   dialogueText: '',
   dialogueIndex: 0,
-
   lastFrameTime: 0,
   shake: 0,
+  slowMoUntil: 0,
+
+  bossLabels: ['BOMB', 'BROTHER BOMB'],
 
   init() {
     this.canvas = document.getElementById('game-canvas');
@@ -157,9 +164,8 @@ const Game = {
     AudioSys.init();
     this.setHiScore(this.hiscore);
     this.showBoot();
-
     AudioSys.playMenu();
-    window.addEventListener('load', () => AudioSys.playMenu());
+
     requestAnimationFrame(this.loop.bind(this));
   },
 
@@ -221,23 +227,35 @@ const Game = {
       const rect = this.canvas.getBoundingClientRect();
       const x = (t.clientX - rect.left) * (W / rect.width);
       const y = (t.clientY - rect.top) * (H / rect.height);
-      if (y > H - 104) {
-        this.mobileTouchActive = true;
-        this.paddle.targetX = x - this.paddle.w / 2;
+
+      if (
+        x >= this.paddle.x - 12 &&
+        x <= this.paddle.x + this.paddle.w + 12 &&
+        y >= this.paddle.y - 20 &&
+        y <= this.paddle.y + this.paddle.h + 20
+      ) {
+        this.touchingPaddle = true;
+        this.paddleTouchOffset = x - this.paddle.x;
+        this.paddleGlowUntil = now() + 500;
+        this.paddle.targetX = this.paddle.x;
       }
     }, { passive: false });
 
     this.canvas.addEventListener('touchmove', (e) => {
-      if (this.mode !== 'mobile' || !this.mobileTouchActive) return;
+      if (this.mode !== 'mobile' || !this.touchingPaddle) return;
       e.preventDefault();
+
       const t = e.touches[0];
       const rect = this.canvas.getBoundingClientRect();
       const x = (t.clientX - rect.left) * (W / rect.width);
-      this.paddle.targetX = x - this.paddle.w / 2;
+
+      this.paddle.targetX = x - this.paddleTouchOffset;
+      this.paddleGlowUntil = now() + 200;
     }, { passive: false });
 
     window.addEventListener('touchend', () => {
-      this.mobileTouchActive = false;
+      this.touchingPaddle = false;
+      this.paddleTouchOffset = 0;
     });
   },
 
@@ -248,7 +266,6 @@ const Game = {
     document.getElementById('hud').classList.add('hidden');
     document.getElementById('choice-screen').classList.add('hidden');
     document.getElementById('dialogue-box').classList.add('hidden');
-    document.getElementById('mobile-controls').classList.add('hidden');
     this.drawBootFrame();
   },
 
@@ -265,7 +282,6 @@ const Game = {
     document.getElementById('hud').classList.add('hidden');
     document.getElementById('choice-screen').classList.add('hidden');
     document.getElementById('dialogue-box').classList.add('hidden');
-    document.getElementById('mobile-controls').classList.add('hidden');
 
     this.updateHUD();
     AudioSys.playMenu();
@@ -280,11 +296,14 @@ const Game = {
     this.hp = this.maxHp;
     this.wave = 1;
     this.round = 1;
+    this.bossIndex = 0;
+    this.currentBossLabel = this.bossLabels[this.bossIndex];
     this.endlessMode = false;
     this.climaxChoiceShown = false;
     this.bossTransitioning = false;
     this.effects.slowUntil = 0;
     this.effects.growUntil = 0;
+    this.slowMoUntil = 0;
     this.clearWorld();
 
     this.paddle.w = this.paddle.baseW;
@@ -294,7 +313,6 @@ const Game = {
     document.getElementById('menu-screen').classList.remove('active');
     document.getElementById('boot-screen').classList.remove('active');
     document.getElementById('hud').classList.remove('hidden');
-    document.getElementById('mobile-controls').classList.toggle('hidden', mode !== 'mobile');
     document.getElementById('choice-screen').classList.add('hidden');
     document.getElementById('dialogue-box').classList.add('hidden');
 
@@ -374,7 +392,7 @@ const Game = {
     this.balls = [];
 
     const cols = 10;
-    const rows = clamp(5 + Math.floor((waveNumber - 1) * 0.6), 5, 10);
+    const rows = clamp(5 + Math.floor((waveNumber - 1) * 0.6), 5, 11);
     const brickW = 40;
     const brickH = 18;
     const gap = 2;
@@ -453,9 +471,7 @@ const Game = {
       this.effects.growUntil = t + 5000;
       this.flashText('BIG PADDLE');
     } else if (type === 'star') {
-      if (this.balls.length) {
-        this.balls.push(this.duplicateBall(this.balls[0]));
-      }
+      if (this.balls.length) this.balls.push(this.duplicateBall(this.balls[0]));
       this.flashText('EXTRA BALL');
     } else if (type === 'bomb') {
       this.damage(15);
@@ -466,11 +482,13 @@ const Game = {
   damage(amount) {
     this.hp -= amount;
     if (this.hp < 0) this.hp = 0;
-    this.shake = 10;
+    this.shake = Math.max(this.shake, 10);
+    this.slowMoUntil = Math.max(this.slowMoUntil, now() + 150);
+
+    if (navigator.vibrate) navigator.vibrate(30);
+
     this.updateHUD();
-    if (this.hp <= 0) {
-      this.gameOver();
-    }
+    if (this.hp <= 0) this.gameOver();
   },
 
   gameOver() {
@@ -491,14 +509,14 @@ const Game = {
     this.phase = 'transition';
     AudioSys.stopMusic();
 
-    this.typeDialogue(
-      'BOMB',
-      '💣',
-      'SO... YOU MADE IT THIS FAR.\nTHE REAL TRIAL BEGINS NOW.',
-      () => {
-        setTimeout(() => this.startBossFight(), 900);
-      }
-    );
+    const line =
+      this.currentBossLabel === 'BOMB'
+        ? 'SO... YOU MADE IT THIS FAR.\nTHE REAL TRIAL BEGINS NOW.'
+        : 'YOU THOUGHT THE FIRST ONE WAS BAD?\nNOW MEET MY BROTHER.';
+
+    this.typeDialogue(this.currentBossLabel, '💣', line, () => {
+      setTimeout(() => this.startBossFight(), 900);
+    });
   },
 
   typeDialogue(speaker, portrait, text, done) {
@@ -524,7 +542,7 @@ const Game = {
       const ch = this.dialogueText[this.dialogueIndex++];
       dialogueText.innerText += ch;
 
-      if (ch !== ' ' && ch !== '\n') {
+      if (speaker === 'BOMB' && ch !== ' ' && ch !== '\n') {
         AudioSys.playSfx(AudioSys.talkSfx);
       }
 
@@ -545,7 +563,7 @@ const Game = {
     this.items = [];
     this.flowers = [];
     this.followers = [];
-    this.particles.push({ type: 'boss-arrive', x: W / 2, y: 120, life: 1800, maxLife: 1800 });
+    this.particles.push({ type: 'boss-burst', x: W / 2, y: 128, life: 1800, maxLife: 1800 });
     AudioSys.playBossMusic();
     this.showBossIntro();
     this.updateHUD();
@@ -557,12 +575,12 @@ const Game = {
     const portraitEl = document.getElementById('portrait');
     const dialogueText = document.getElementById('dialogue-text');
 
-    speakerName.innerText = 'BOMB';
+    speakerName.innerText = this.currentBossLabel;
     portraitEl.innerText = '💣';
-    dialogueText.innerText = 'THIS IS THE BOMB PHASE.\nDODGE THE BLASTERS.';
+    dialogueText.innerText = `${this.currentBossLabel} HAS ENTERED THE FIGHT.`;
     box.classList.remove('hidden');
 
-    setTimeout(() => box.classList.add('hidden'), 1800);
+    setTimeout(() => box.classList.add('hidden'), 1600);
   },
 
   startClimaxChoice() {
@@ -581,6 +599,7 @@ const Game = {
 
     this.phase = 'reclaim';
     this.particles.push({ type: 'boss-burst', x: W / 2, y: 128, life: 900, maxLife: 900 });
+    this.addExplosionRing(W / 2, 128);
     this.flashText('RECLAIM');
 
     this.followers.push({
@@ -596,7 +615,15 @@ const Game = {
       this.flowers.push({ x: W / 2 - 5, y: H - 96, life: 2600, maxLife: 2600 });
     }, 1400);
 
-    setTimeout(() => this.startEndlessMode(), 3600);
+    setTimeout(() => {
+      this.bossIndex = (this.bossIndex + 1) % this.bossLabels.length;
+      this.currentBossLabel = this.bossLabels[this.bossIndex];
+      this.wave += 1;
+      this.phase = 'breakout';
+      this.createBreakoutWave(this.wave);
+      AudioSys.playBattleStartThenLoop();
+      this.flashText(`ROUND ${this.wave}`);
+    }, 3600);
   },
 
   startReleaseSequence() {
@@ -608,19 +635,21 @@ const Game = {
     setTimeout(() => this.showMenu(), 2500);
   },
 
-  startEndlessMode() {
-    this.endlessMode = true;
-    this.phase = 'endless';
-    this.wave = 1;
-    this.score += 500;
-    this.updateHiScore();
-    this.createBreakoutWave(this.wave);
-    this.items = [];
-    this.blasters = [];
-    this.bossTimer = 0;
-    AudioSys.playBattleStartThenLoop();
-    this.flashText('ENDLESS MODE');
-    this.updateHUD();
+  addExplosionRing(x, y) {
+    for (let i = 0; i < 28; i++) {
+      const a = (Math.PI * 2 * i) / 28;
+      const s = rand(70, 180);
+      this.particles.push({
+        type: 'pixel',
+        x,
+        y,
+        vx: Math.cos(a) * s,
+        vy: Math.sin(a) * s,
+        color: '#ffffff',
+        life: rand(300, 900),
+        maxLife: 900
+      });
+    }
   },
 
   spawnBlaster() {
@@ -632,7 +661,6 @@ const Game = {
       phase: 'telegraph',
       timer: 1000,
       fireMs: 900,
-      mouth: 0,
       dead: false
     });
 
@@ -663,6 +691,11 @@ const Game = {
   },
 
   update(dt, t) {
+    let timeScale = 1;
+    if (t < this.slowMoUntil) timeScale *= 0.62;
+    if (this.hp <= 25) timeScale *= 0.9;
+    dt *= timeScale;
+
     const slowFactor = t < this.effects.slowUntil ? 0.68 : 1;
     const growFactor = t < this.effects.growUntil ? 1.6 : 1;
 
@@ -675,7 +708,14 @@ const Game = {
     }
 
     this.paddle.targetX = clamp(this.paddle.targetX, 0, W - this.paddle.w);
-    this.paddle.x += (this.paddle.targetX - this.paddle.x) * Math.min(1, dt * 12);
+
+    if (this.mode === 'mobile' && this.touchingPaddle && this.isPlayablePhase()) {
+      this.paddle.x = this.paddle.targetX;
+    } else {
+      this.paddle.x += (this.paddle.targetX - this.paddle.x) * Math.min(1, dt * 12);
+    }
+
+    this.paddle.x = clamp(this.paddle.x, 0, W - this.paddle.w);
 
     if (this.phase === 'breakout') {
       this.updateBalls(dt, t, slowFactor, false);
@@ -822,7 +862,7 @@ const Game = {
 
   checkEndlessWave() {
     if (this.bricks.length === 0) {
-      this.wave++;
+      this.wave += 1;
       this.score += 250;
       this.updateHiScore();
       this.flashText(`WAVE ${this.wave}`);
@@ -846,17 +886,16 @@ const Game = {
     for (const b of this.blasters) {
       if (b.phase === 'telegraph') {
         b.timer -= dt * 1000;
-        b.mouth = 0;
         if (b.timer <= 0) {
           b.phase = 'fire';
           b.timer = b.fireMs;
-          b.mouth = 1;
           AudioSys.playSfx(AudioSys.blasterSfx);
           this.addParticles(b.x, b.y, '#ff00ff', 12, 180);
+          this.shake = Math.max(this.shake, 4);
+          this.slowMoUntil = Math.max(this.slowMoUntil, now() + 240);
         }
       } else if (b.phase === 'fire') {
         b.timer -= dt * 1000;
-        b.mouth = 1;
         if (b.timer <= 0) {
           b.dead = true;
         }
@@ -871,6 +910,7 @@ const Game = {
 
         if (this.intersectRect(this.paddle, beamRect)) {
           this.damage(14 * dt * 6);
+          this.shake = Math.max(this.shake, 7);
         }
 
         for (const ball of this.balls) {
@@ -1058,6 +1098,17 @@ const Game = {
   },
 
   drawPaddle(c) {
+    const touched = this.mode === 'mobile' && (this.touchingPaddle || now() < this.paddleGlowUntil);
+
+    if (touched) {
+      c.save();
+      c.shadowColor = '#ffffff';
+      c.shadowBlur = 16;
+      c.fillStyle = '#ffffff';
+      c.fillRect(this.paddle.x - 3, this.paddle.y - 3, this.paddle.w + 6, this.paddle.h + 6);
+      c.restore();
+    }
+
     c.fillStyle = '#fff';
     c.fillRect(this.paddle.x, this.paddle.y, this.paddle.w, this.paddle.h);
     c.fillStyle = '#000';
@@ -1102,9 +1153,6 @@ const Game = {
   },
 
   drawBlaster(c, b) {
-    const open = b.phase === 'fire';
-    const wobble = open ? 1 : 0;
-
     const faceX = b.x - 22;
     const faceY = 18;
 
@@ -1124,23 +1172,20 @@ const Game = {
     c.fillRect(faceX + 4, faceY + 18, 6, 4);
     c.fillRect(faceX + 34, faceY + 18, 6, 4);
 
-    if (!open) {
+    if (b.phase === 'telegraph') {
       c.fillStyle = '#000';
       c.fillRect(faceX + 15, faceY + 24, 14, 4);
       c.fillRect(faceX + 13, faceY + 26, 18, 2);
-    } else {
+      c.fillStyle = 'rgba(255,0,0,0.35)';
+      c.fillRect(b.x - 1, 0, 2, H);
+    } else if (b.phase === 'fire') {
       c.fillStyle = '#000';
-      c.fillRect(faceX + 13 - wobble, faceY + 22, 18 + wobble * 2, 10);
+      c.fillRect(faceX + 13, faceY + 22, 18, 10);
       c.fillStyle = '#ff00ff';
       c.fillRect(faceX + 15, faceY + 24, 14, 2);
       c.fillStyle = '#fff';
       c.fillRect(faceX + 17, faceY + 26, 10, 2);
-    }
 
-    c.fillStyle = 'rgba(255,0,0,0.35)';
-    c.fillRect(b.x - 1, 0, 2, H);
-
-    if (b.phase === 'fire') {
       c.fillStyle = 'rgba(0,255,255,0.18)';
       c.fillRect(b.x - b.beamW / 2 - 8, 0, b.beamW + 16, H);
       c.fillStyle = '#00ffff';
@@ -1148,9 +1193,6 @@ const Game = {
       c.fillStyle = '#ff00ff';
       c.fillRect(b.x - b.beamW / 2 + 2, 0, 2, H);
       c.fillRect(b.x + b.beamW / 2 - 4, 0, 2, H);
-    } else {
-      c.fillStyle = '#ff0000';
-      c.fillRect(b.x - 2, 0, 4, H);
     }
   },
 
@@ -1200,6 +1242,11 @@ const Game = {
         c.moveTo(p.x, 0);
         c.lineTo(p.x, H);
         c.stroke();
+      } else if (p.type === 'boss-burst') {
+        c.fillStyle = `rgba(255,255,255,${alpha})`;
+        c.beginPath();
+        c.arc(p.x, p.y, 14 + (1 - alpha) * 70, 0, Math.PI * 2);
+        c.fill();
       } else {
         c.fillStyle = p.color || `rgba(255,255,255,${alpha})`;
         c.fillRect(p.x | 0, p.y | 0, 2, 2);
@@ -1293,14 +1340,17 @@ const Game = {
   loop(timestamp) {
     const t = timestamp || now();
     if (!this.lastFrameTime) this.lastFrameTime = t;
-    const dt = clamp((t - this.lastFrameTime) / 1000, 0, 0.033);
+    let dt = clamp((t - this.lastFrameTime) / 1000, 0, 0.033);
     this.lastFrameTime = t;
+
+    if (now() < this.slowMoUntil) dt *= 0.62;
 
     if (
       this.state === 'PLAY' ||
       this.phase === 'transition' ||
       this.phase === 'reclaim' ||
-      this.phase === 'release'
+      this.phase === 'release' ||
+      this.phase === 'rage-explode'
     ) {
       this.update(dt, t);
       this.draw(t);
