@@ -1,96 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>DETERMINATION</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>☠ BREAKOUT: BOSS RUSH ☠</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="crt-overlay"></div>
+  <div id="wrapper">
+    <div id="scanlines"></div>
+    <div id="crt-vignette"></div>
 
-  <div id="game-container">
-    <div id="boot-screen" class="overlay active">
-      <h2>CLICK TO START</h2>
-      <p>INITIALIZING AUDIO...</p>
-    </div>
+    <!-- ══════════════════════════════════════
+         MENU SCREEN
+    ══════════════════════════════════════ -->
+    <div id="menu">
+      <div id="menu-hi-row">HI-SCORE: <span id="menu-hi-val">0</span></div>
 
-    <div id="menu-screen" class="overlay">
-      <h1 class="title">DETERMINATION</h1>
-
-      <div class="menu-topbar">
-        <span>HIGH SCORE: <span id="ui-hiscore-menu">0</span></span>
+      <div id="menu-hp-section">
+        <span class="mhp-label">HP</span>
+        <div class="mhp-bar-outer"><div class="mhp-bar-inner" id="mhp-fill"></div></div>
+        <span id="mhp-text">100</span>
       </div>
 
-      <div class="menu-layout">
-        <div class="controls-box">
-          <h3>SELECT PLATFORM</h3>
-          <button class="btn" id="btn-pc">PC MODE</button>
-          <button class="btn" id="btn-mobile">MOBILE MODE</button>
-          <p class="sub-text">
-            PC: Mouse or Arrow Keys<br>
-            MOBILE: Touch the Paddle
-          </p>
+      <div id="menu-title">
+        <div class="title-line">☠ BREAKOUT</div>
+        <div class="title-line accent">BOSS RUSH ☠</div>
+      </div>
+
+      <div id="menu-tagline">CLEAR BLOCKS · SURVIVE THE BOMB · FACE YOUR FATE</div>
+
+      <div id="drop-legend">
+        <div class="leg-item"><span class="leg-k">S</span><span>Slow Ball</span></div>
+        <div class="leg-item"><span class="leg-k">🍄</span><span>Big Paddle</span></div>
+        <div class="leg-item"><span class="leg-k">⭐</span><span>Extra Ball</span></div>
+        <div class="leg-item"><span class="leg-k">💣</span><span>−15 HP!</span></div>
+      </div>
+
+      <div id="settings-panel">
+        <div class="setting-row">
+          <label class="set-lbl">🎵 MUSIC</label>
+          <input type="range" id="music-vol" min="0" max="1" step="0.01" value="0.5">
+          <span id="music-pct">50%</span>
         </div>
-
-        <div class="settings-box">
-          <h3>SETTINGS</h3>
-          <div class="slider-row">
-            <span>MUSIC VOLUME</span>
-            <input type="range" id="vol-music" min="0" max="1" step="0.05" value="0.5">
-          </div>
-          <div class="slider-row">
-            <span>SFX VOLUME</span>
-            <input type="range" id="vol-sfx" min="0" max="1" step="0.05" value="0.5">
-          </div>
-        </div>
-      </div>
-
-      <div class="legend">
-        DROPS: [S] Slow | [🍄] Big Paddle | [⭐] Extra Ball | [💣] Damage
-      </div>
-    </div>
-
-    <div id="hud" class="hidden">
-      <div class="hud-top">
-        <span>HI-SCORE: <span id="ui-hiscore">0</span></span>
-        <span id="ui-timer" class="hidden">02:00</span>
-        <span>SCORE: <span id="ui-score">0</span></span>
-      </div>
-
-      <div class="hud-bottom">
-        <div class="hp-container">
-          HP
-          <div class="hp-bar-bg">
-            <div id="hp-bar-fill"></div>
-          </div>
-          <span id="ui-hp">100/100</span>
+        <div class="setting-row">
+          <label class="set-lbl">🔊 SFX</label>
+          <input type="range" id="sfx-vol" min="0" max="1" step="0.01" value="0.5">
+          <span id="sfx-pct">50%</span>
         </div>
       </div>
+
+      <div id="platform-select">
+        <button class="menu-btn primary" id="btn-pc">▶ PLAY ON PC</button>
+        <button class="menu-btn secondary" id="btn-mobile">📱 PLAY ON MOBILE</button>
+      </div>
+
+      <div id="menu-footer">MOUSE/ARROWS · PC &nbsp;|&nbsp; DRAG CANVAS · MOBILE</div>
     </div>
 
-    <canvas id="game-canvas" width="480" height="640"></canvas>
+    <!-- ══════════════════════════════════════
+         GAME CANVAS
+    ══════════════════════════════════════ -->
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-    <div id="dialogue-box" class="hidden">
-      <div class="dialogue-inner">
-        <div id="portrait">💣</div>
-        <div class="text-area">
-          <div id="speaker-name">BOMB</div>
-          <div id="dialogue-text"></div>
+    <!-- ══════════════════════════════════════
+         HUD
+    ══════════════════════════════════════ -->
+    <div id="hud">
+      <div id="hud-score">
+        <div class="hud-lbl">SCORE</div>
+        <div id="score-val">0</div>
+      </div>
+      <div id="hud-center">
+        <div id="hp-bar-outer"><div id="hp-bar-fill"></div></div>
+        <div id="hp-text">100 HP</div>
+      </div>
+      <div id="hud-right">
+        <div id="round-label">ROUND 1</div>
+        <div id="hi-label">HI: <span id="hi-val">0</span></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         ACTIVE POWERUP BADGES
+    ══════════════════════════════════════ -->
+    <div id="pu-status"></div>
+
+    <!-- ══════════════════════════════════════
+         BOSS TIMER BAR
+    ══════════════════════════════════════ -->
+    <div id="boss-timer-wrap">
+      <div id="boss-timer-fill"></div>
+      <div id="boss-timer-text">2:00</div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         DIALOGUE OVERLAY
+    ══════════════════════════════════════ -->
+    <div id="dialogue-overlay">
+      <div id="dialogue-box">
+        <div id="dlg-left">
+          <canvas id="portrait-canvas" width="80" height="80"></canvas>
+          <div id="dlg-name"></div>
+        </div>
+        <div id="dlg-right">
+          <div id="dlg-text"></div>
         </div>
       </div>
+      <div id="dlg-prompt">▼ CLICK / TAP TO CONTINUE</div>
     </div>
 
-    <div id="choice-screen" class="overlay hidden">
-      <h2 class="judgement">JUDGEMENT</h2>
-      <p class="choice-text">THE TIMER HAS ENDED.</p>
-      <div class="choice-btns">
-        <button class="btn fight" id="btn-reclaim">[ RECLAIM ]</button>
-        <button class="btn mercy" id="btn-release">[ RELEASE ]</button>
+    <!-- ══════════════════════════════════════
+         CLIMAX OVERLAY
+    ══════════════════════════════════════ -->
+    <div id="climax-overlay">
+      <div id="climax-msg">— THE MOMENT OF TRUTH —</div>
+      <div id="climax-sub">What will you do?</div>
+      <div id="climax-btns">
+        <button id="btn-fight">⚔ FIGHT</button>
+        <button id="btn-spare">❤ SPARE</button>
       </div>
     </div>
-  </div>
+
+    <!-- ══════════════════════════════════════
+         GAME OVER OVERLAY
+    ══════════════════════════════════════ -->
+    <div id="gameover-overlay">
+      <div id="go-skull">☠</div>
+      <div id="go-title">GAME OVER</div>
+      <div id="go-score-line"></div>
+      <div id="go-hi-line"></div>
+      <button id="btn-restart">↩ PLAY AGAIN</button>
+    </div>
+
+  </div><!-- end wrapper -->
 
   <script src="script.js"></script>
 </body>
