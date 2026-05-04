@@ -1794,19 +1794,30 @@ function drawRoseScene(t) {
 //  UI WIRING
 // ──────────────────────────────────────────────────────────────────
 function init() {
+  console.log('Game initializing...');
+  
   // Initialize canvas references
   initCanvasRefs();
+  console.log('Canvas refs initialized');
 
   // Setup screen fitting
   window.addEventListener('resize', fitScreen);
   fitScreen();
 
   // Menu buttons
-  $('btn-pc').addEventListener('click', () => {
+  const btnPC = $('btn-pc');
+  const btnMobile = $('btn-mobile');
+  
+  console.log('PC button:', btnPC);
+  console.log('Mobile button:', btnMobile);
+  
+  btnPC.addEventListener('click', () => {
+    console.log('PC button clicked!');
     if (menuAudioQueued) { playMusic('menu'); menuAudioQueued = false; }
     startGame('pc');
   });
-  $('btn-mobile').addEventListener('click', () => {
+  btnMobile.addEventListener('click', () => {
+    console.log('Mobile button clicked!');
     if (menuAudioQueued) { playMusic('menu'); menuAudioQueued = false; }
     startGame('mobile');
   });
@@ -1840,15 +1851,23 @@ function init() {
   $('hi-val').textContent = highScore;
 
   // Autoplay menu music
+  console.log('Attempting to play menu music...');
   SND.menu.volume = musicVol;
-  SND.menu.play().catch(() => { menuAudioQueued = true; });
+  SND.menu.play().then(() => {
+    console.log('Menu music playing!');
+  }).catch((err) => { 
+    console.log('Menu music blocked by browser, will play on first interaction:', err);
+    menuAudioQueued = true; 
+  });
 
   // Start game loop
   lastTime = performance.now();
   rafId = requestAnimationFrame(loop);
+  console.log('Game loop started!');
 
   // Start on menu
   state = STATE.MENU;
+  console.log('Init complete! Current state:', state);
 }
 
 // ──────────────────────────────────────────────────────────────────
